@@ -1,13 +1,19 @@
+import os
 from django.db import models
 from django.contrib.auth.models import User
 
 
 def card_photo_upload_to(instance, filename):
+    ext = os.path.splitext(filename)[1] or '.jpg'
     if instance.collection_id:
         username = instance.collection.user.username
+        collection_name = instance.collection.name.replace('/', '_').replace('\\', '_').strip() or 'collection'
+        n = instance.collection.cards.exclude(photo='').count() + 1
     else:
         username = 'unknown'
-    return f'cards/{username}/{filename}'
+        collection_name = 'collection'
+        n = 1
+    return f'cards/{username}/{collection_name}/{n:04d}{ext}'
 
 
 class Collection(models.Model):
