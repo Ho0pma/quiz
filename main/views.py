@@ -98,6 +98,12 @@ class UpdateCardAjaxView(LoginRequiredMixin, View):
             form = CardForm(request.POST, request.FILES, instance=card)
             if form.is_valid():
                 form.save()
+                if request.POST.get('clear_photo'):
+                    old_photo = card.photo
+                    card.photo = None
+                    card.save(update_fields=['photo'])
+                    if old_photo:
+                        old_photo.delete(save=False)
                 return JsonResponse({"ok": True})
             return JsonResponse({"ok": False, "errors": form.errors}, status=400)
         except Card.DoesNotExist:

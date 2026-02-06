@@ -46,7 +46,7 @@
                                         <img src="{{ card.photo.url }}" alt="" width="150">
                                     {% endif %}
                                     <div><strong>A:</strong> {{ card.answer }}</div>
-                                    <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" onclick="event.stopPropagation();">Edit</button>
+                                    <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" data-has-photo="{% if card.photo %}true{% else %}false{% endif %}" onclick="event.stopPropagation();">Edit</button>
                                     <button type="button" class="delete-card-btn" data-card-id="{{ card.id }}" onclick="event.stopPropagation();">Delete</button>
                                 </div>
                             {% empty %}
@@ -162,6 +162,9 @@
             <textarea name="question" id="editCardQuestion" required></textarea>
             <label>Photo (leave empty to keep current)</label>
             <input name="photo" type="file" id="editCardPhoto" accept="image/*">
+            <div id="editCardClearPhotoWrap" style="display:none;">
+                <label><input type="checkbox" name="clear_photo" id="editCardClearPhoto" value="1"> Remove photo</label>
+            </div>
             <label>Answer</label>
             <textarea name="answer" id="editCardAnswer" required></textarea>
             <button type="submit">Update</button>
@@ -494,16 +497,22 @@
     const editCardAnswer = document.getElementById('editCardAnswer');
     const editCardPhoto = document.getElementById('editCardPhoto');
 
+    const editCardClearPhotoWrap = document.getElementById('editCardClearPhotoWrap');
+    const editCardClearPhoto = document.getElementById('editCardClearPhoto');
+
     document.querySelectorAll('.edit-card-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const cardId = btn.getAttribute('data-card-id');
             const question = btn.getAttribute('data-question') || '';
             const answer = btn.getAttribute('data-answer') || '';
+            const hasPhoto = btn.getAttribute('data-has-photo') === 'true';
             editCardForm.action = `/cards/${cardId}/update/`;
             editCardQuestion.value = question;
             editCardAnswer.value = answer;
             editCardPhoto.value = '';
+            if (editCardClearPhoto) editCardClearPhoto.checked = false;
+            if (editCardClearPhotoWrap) editCardClearPhotoWrap.style.display = hasPhoto ? 'block' : 'none';
             editCardErrors.innerHTML = '';
             editCardModal.style.display = 'block';
         });
