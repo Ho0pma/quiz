@@ -13,4 +13,5 @@ urlpatterns = [
    path("collections/<int:collection_id>/update/", views.UpdateCollectionAjaxView.as_view(), name="update_collection"),
    path("collections/<int:collection_id>/delete/", views.DeleteCollectionAjaxView.as_view(), name="delete_collection"),
    path("cards/<int:card_id>/update/", views.UpdateCardAjaxView.as_view(), name="update_card"),
+   path("cards/<int:card_id>/delete/", views.DeleteCardAjaxView.as_view(), name="delete_card"),
 ]

@@ -46,6 +46,7 @@
                                     {% endif %}
                                     <div><strong>A:</strong> {{ card.answer }}</div>
                                     <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" onclick="event.stopPropagation();">Edit</button>
+                                    <button type="button" class="delete-card-btn" data-card-id="{{ card.id }}" onclick="event.stopPropagation();">Delete</button>
                                 </div>
                             {% empty %}
                                 <p>No cards yet.</p>
@@ -296,8 +297,8 @@
     const collectionsContainer = document.getElementById('collections-container');
     if (collectionsContainer) {
         collectionsContainer.addEventListener('click', (e) => {
-            // Don't expand if clicking delete, edit collection, or edit card button
-            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn')) {
+            // Don't expand if clicking delete, edit collection, edit card, or delete card button
+            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn') || e.target.classList.contains('delete-card-btn')) {
                 return;
             }
             const item = e.target.closest('.collection-item');
@@ -466,6 +467,29 @@
                 .join('');
         });
     }
+
+    // Delete card
+    document.querySelectorAll('.delete-card-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm('Delete this card?')) return;
+            const cardId = btn.getAttribute('data-card-id');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            const resp = await fetch(`/cards/${cardId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                },
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting card');
+            }
+        });
+    });
 
     // Submit edit collection form
     if (editCollectionForm) {

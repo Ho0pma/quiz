@@ -89,3 +89,13 @@ class UpdateCardAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "errors": "Card not found"}, status=404)
 
 
+class DeleteCardAjaxView(LoginRequiredMixin, View):
+    def post(self, request, card_id, *args, **kwargs):
+        try:
+            card = Card.objects.get(id=card_id, collection__user=request.user)
+            card.delete()
+            return JsonResponse({"ok": True})
+        except Card.DoesNotExist:
+            return JsonResponse({"ok": False, "errors": "Card not found"}, status=404)
+
+
