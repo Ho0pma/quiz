@@ -63,3 +63,16 @@ class DeleteCollectionAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
 
 
+class UpdateCollectionAjaxView(LoginRequiredMixin, View):
+    def post(self, request, collection_id, *args, **kwargs):
+        try:
+            collection = Collection.objects.get(id=collection_id, user=request.user)
+            form = CollectionForm(request.POST, instance=collection)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({"ok": True})
+            return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+        except Collection.DoesNotExist:
+            return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
+
+

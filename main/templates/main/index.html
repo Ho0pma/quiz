@@ -26,6 +26,7 @@
                 <div class="collection-item" data-collection-id="{{ collection.id }}" style="cursor: pointer;">
                     <div class="collection-header">
                         <strong>{{ collection.name }}</strong> (click to expand)
+                        <button type="button" class="edit-collection-btn" data-collection-id="{{ collection.id }}" data-collection-name="{{ collection.name }}" data-collection-description="{{ collection.description|default:'' }}" onclick="event.stopPropagation();">Edit</button>
                         <button type="button" class="delete-collection-btn" data-collection-id="{{ collection.id }}" onclick="event.stopPropagation();">Delete</button>
                     </div>
                     <div class="collection-content" style="display:none;">
@@ -95,6 +96,21 @@
             <textarea name="description" placeholder="Description (optional)"></textarea>
             <button type="submit">Create</button>
             <button type="button" id="closeCreateCollectionBtn">Close</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Collection Modal -->
+<div id="editCollectionModal" style="display:none;">
+    <div>
+        <button type="button" id="closeEditCollection">X</button>
+        <div id="editCollectionErrors" style="color:red;"></div>
+        <form id="editCollectionForm" method="post">
+            {% csrf_token %}
+            <input name="name" type="text" id="editCollectionName" placeholder="Collection name" required>
+            <textarea name="description" id="editCollectionDescription" placeholder="Description (optional)"></textarea>
+            <button type="submit">Update</button>
+            <button type="button" id="closeEditCollectionBtn">Close</button>
         </form>
     </div>
 </div>
@@ -246,8 +262,8 @@
     const collectionsContainer = document.getElementById('collections-container');
     if (collectionsContainer) {
         collectionsContainer.addEventListener('click', (e) => {
-            // Don't expand if clicking delete button
-            if (e.target.classList.contains('delete-collection-btn')) {
+            // Don't expand if clicking delete or edit button
+            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn')) {
                 return;
             }
             const item = e.target.closest('.collection-item');
@@ -314,6 +330,71 @@
 
             const errors = data.errors || {};
             createCollectionErrors.innerHTML = Object.entries(errors)
+                .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                .join('');
+        });
+    }
+
+    // Edit Collection Modal
+    const editCollectionModal = document.getElementById('editCollectionModal');
+    const editCollectionErrors = document.getElementById('editCollectionErrors');
+    const editCollectionForm = document.getElementById('editCollectionForm');
+    const editCollectionName = document.getElementById('editCollectionName');
+    const editCollectionDescription = document.getElementById('editCollectionDescription');
+
+    // Edit collection buttons
+    document.querySelectorAll('.edit-collection-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const collectionId = btn.getAttribute('data-collection-id');
+            const collectionName = btn.getAttribute('data-collection-name');
+            const collectionDescription = btn.getAttribute('data-collection-description');
+            
+            editCollectionName.value = collectionName;
+            editCollectionDescription.value = collectionDescription;
+            editCollectionForm.action = `/collections/${collectionId}/update/`;
+            editCollectionErrors.innerHTML = '';
+            editCollectionModal.style.display = 'block';
+        });
+    });
+
+    const closeEditCollectionBtn = document.getElementById('closeEditCollection');
+    if (closeEditCollectionBtn) {
+        closeEditCollectionBtn.onclick = () => {
+            editCollectionModal.style.display = 'none';
+            editCollectionErrors.innerHTML = '';
+        };
+    }
+
+    const closeEditCollectionBtn2 = document.getElementById('closeEditCollectionBtn');
+    if (closeEditCollectionBtn2) {
+        closeEditCollectionBtn2.onclick = () => {
+            editCollectionModal.style.display = 'none';
+            editCollectionErrors.innerHTML = '';
+        };
+    }
+
+    // Submit edit collection form
+    if (editCollectionForm) {
+        editCollectionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            editCollectionErrors.innerHTML = '';
+
+            const resp = await fetch(editCollectionForm.action, {
+                method: 'POST',
+                body: new FormData(editCollectionForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.ok) {
+                window.location.reload();
+                return;
+            }
+
+            const errors = data.errors || {};
+            editCollectionErrors.innerHTML = Object.entries(errors)
                 .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
                 .join('');
         });
