@@ -76,6 +76,21 @@ class UpdateCollectionAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
 
 
+class CreateCardAjaxView(LoginRequiredMixin, View):
+    def post(self, request, collection_id, *args, **kwargs):
+        try:
+            collection = Collection.objects.get(id=collection_id, user=request.user)
+            form = CardForm(request.POST, request.FILES)
+            if form.is_valid():
+                card = form.save(commit=False)
+                card.collection = collection
+                card.save()
+                return JsonResponse({"ok": True, "id": card.id})
+            return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+        except Collection.DoesNotExist:
+            return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
+
+
 class UpdateCardAjaxView(LoginRequiredMixin, View):
     def post(self, request, card_id, *args, **kwargs):
         try:

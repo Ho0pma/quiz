@@ -38,6 +38,7 @@
                         <div class="collection-date">Created: {{ collection.created_at|date:"M d, Y" }}</div>
                         <div class="collection-cards">
                             <strong>Cards:</strong>
+                            <button type="button" class="add-card-btn" data-collection-id="{{ collection.id }}" onclick="event.stopPropagation();">Add card</button>
                             {% for card in collection.cards.all %}
                                 <div class="card-item" data-card-id="{{ card.id }}">
                                     <div><strong>Q:</strong> {{ card.question }}</div>
@@ -127,6 +128,25 @@
             <textarea name="description" id="editCollectionDescription" placeholder="Description (optional)"></textarea>
             <button type="submit">Update</button>
             <button type="button" id="closeEditCollectionBtn">Close</button>
+        </form>
+    </div>
+</div>
+
+<!-- Create Card Modal -->
+<div id="createCardModal" style="display:none;">
+    <div>
+        <button type="button" id="closeCreateCard">X</button>
+        <div id="createCardErrors" style="color:red;"></div>
+        <form id="createCardForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label>Question</label>
+            <textarea name="question" id="createCardQuestion" required></textarea>
+            <label>Photo (optional)</label>
+            <input name="photo" type="file" id="createCardPhoto" accept="image/*">
+            <label>Answer</label>
+            <textarea name="answer" id="createCardAnswer" required></textarea>
+            <button type="submit">Create</button>
+            <button type="button" id="closeCreateCardBtn">Close</button>
         </form>
     </div>
 </div>
@@ -297,8 +317,8 @@
     const collectionsContainer = document.getElementById('collections-container');
     if (collectionsContainer) {
         collectionsContainer.addEventListener('click', (e) => {
-            // Don't expand if clicking delete, edit collection, edit card, or delete card button
-            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn') || e.target.classList.contains('delete-card-btn')) {
+            // Don't expand if clicking delete, edit collection, edit card, delete card, or add card button
+            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn') || e.target.classList.contains('delete-card-btn') || e.target.classList.contains('add-card-btn')) {
                 return;
             }
             const item = e.target.closest('.collection-item');
@@ -407,6 +427,63 @@
             editCollectionModal.style.display = 'none';
             editCollectionErrors.innerHTML = '';
         };
+    }
+
+    // Create Card Modal
+    const createCardModal = document.getElementById('createCardModal');
+    const createCardErrors = document.getElementById('createCardErrors');
+    const createCardForm = document.getElementById('createCardForm');
+    const createCardQuestion = document.getElementById('createCardQuestion');
+    const createCardAnswer = document.getElementById('createCardAnswer');
+    const createCardPhoto = document.getElementById('createCardPhoto');
+
+    document.querySelectorAll('.add-card-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const collectionId = btn.getAttribute('data-collection-id');
+            createCardForm.action = `/collections/${collectionId}/cards/create/`;
+            createCardQuestion.value = '';
+            createCardAnswer.value = '';
+            createCardPhoto.value = '';
+            createCardErrors.innerHTML = '';
+            createCardModal.style.display = 'block';
+        });
+    });
+
+    const closeCreateCardBtn = document.getElementById('closeCreateCard');
+    if (closeCreateCardBtn) {
+        closeCreateCardBtn.onclick = () => {
+            createCardModal.style.display = 'none';
+            createCardErrors.innerHTML = '';
+        };
+    }
+    const closeCreateCardBtn2 = document.getElementById('closeCreateCardBtn');
+    if (closeCreateCardBtn2) {
+        closeCreateCardBtn2.onclick = () => {
+            createCardModal.style.display = 'none';
+            createCardErrors.innerHTML = '';
+        };
+    }
+
+    if (createCardForm) {
+        createCardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            createCardErrors.innerHTML = '';
+            const resp = await fetch(createCardForm.action, {
+                method: 'POST',
+                body: new FormData(createCardForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                window.location.reload();
+                return;
+            }
+            const errors = data.errors || {};
+            createCardErrors.innerHTML = Object.entries(errors)
+                .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                .join('');
+        });
     }
 
     // Edit Card Modal
