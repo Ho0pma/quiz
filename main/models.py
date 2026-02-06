@@ -14,3 +14,18 @@ class Collection(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Card(models.Model):
+    question = models.TextField()
+    photo = models.ImageField(upload_to='cards/', blank=True, null=True)
+    answer = models.TextField()
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='cards')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.question[:50]
