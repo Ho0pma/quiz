@@ -2,6 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+def card_photo_upload_to(instance, filename):
+    if instance.collection_id:
+        username = instance.collection.user.username
+    else:
+        username = 'unknown'
+    return f'cards/{username}/{filename}'
+
+
 class Collection(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
@@ -18,7 +26,7 @@ class Collection(models.Model):
 
 class Card(models.Model):
     question = models.TextField()
-    photo = models.ImageField(upload_to='cards/', blank=True, null=True)
+    photo = models.ImageField(upload_to=card_photo_upload_to, blank=True, null=True)
     answer = models.TextField()
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='cards')
     created_at = models.DateTimeField(auto_now_add=True)
