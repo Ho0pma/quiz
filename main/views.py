@@ -5,8 +5,8 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from main.forms import SignUpForm, CollectionForm
-from main.models import Collection
+from main.forms import SignUpForm, CollectionForm, CardForm
+from main.models import Collection, Card
 
 
 class HomeView(TemplateView):
@@ -74,5 +74,18 @@ class UpdateCollectionAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "errors": form.errors}, status=400)
         except Collection.DoesNotExist:
             return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
+
+
+class UpdateCardAjaxView(LoginRequiredMixin, View):
+    def post(self, request, card_id, *args, **kwargs):
+        try:
+            card = Card.objects.get(id=card_id, collection__user=request.user)
+            form = CardForm(request.POST, request.FILES, instance=card)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({"ok": True})
+            return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+        except Card.DoesNotExist:
+            return JsonResponse({"ok": False, "errors": "Card not found"}, status=404)
 
 

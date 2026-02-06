@@ -39,12 +39,13 @@
                         <div class="collection-cards">
                             <strong>Cards:</strong>
                             {% for card in collection.cards.all %}
-                                <div class="card-item">
+                                <div class="card-item" data-card-id="{{ card.id }}">
                                     <div><strong>Q:</strong> {{ card.question }}</div>
                                     {% if card.photo %}
                                         <img src="{{ card.photo.url }}" alt="" width="150">
                                     {% endif %}
                                     <div><strong>A:</strong> {{ card.answer }}</div>
+                                    <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" onclick="event.stopPropagation();">Edit</button>
                                 </div>
                             {% empty %}
                                 <p>No cards yet.</p>
@@ -125,6 +126,25 @@
             <textarea name="description" id="editCollectionDescription" placeholder="Description (optional)"></textarea>
             <button type="submit">Update</button>
             <button type="button" id="closeEditCollectionBtn">Close</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Card Modal -->
+<div id="editCardModal" style="display:none;">
+    <div>
+        <button type="button" id="closeEditCard">X</button>
+        <div id="editCardErrors" style="color:red;"></div>
+        <form id="editCardForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label>Question</label>
+            <textarea name="question" id="editCardQuestion" required></textarea>
+            <label>Photo (leave empty to keep current)</label>
+            <input name="photo" type="file" id="editCardPhoto" accept="image/*">
+            <label>Answer</label>
+            <textarea name="answer" id="editCardAnswer" required></textarea>
+            <button type="submit">Update</button>
+            <button type="button" id="closeEditCardBtn">Close</button>
         </form>
     </div>
 </div>
@@ -276,8 +296,8 @@
     const collectionsContainer = document.getElementById('collections-container');
     if (collectionsContainer) {
         collectionsContainer.addEventListener('click', (e) => {
-            // Don't expand if clicking delete or edit button
-            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn')) {
+            // Don't expand if clicking delete, edit collection, or edit card button
+            if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn')) {
                 return;
             }
             const item = e.target.closest('.collection-item');
@@ -386,6 +406,65 @@
             editCollectionModal.style.display = 'none';
             editCollectionErrors.innerHTML = '';
         };
+    }
+
+    // Edit Card Modal
+    const editCardModal = document.getElementById('editCardModal');
+    const editCardErrors = document.getElementById('editCardErrors');
+    const editCardForm = document.getElementById('editCardForm');
+    const editCardQuestion = document.getElementById('editCardQuestion');
+    const editCardAnswer = document.getElementById('editCardAnswer');
+    const editCardPhoto = document.getElementById('editCardPhoto');
+
+    document.querySelectorAll('.edit-card-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cardId = btn.getAttribute('data-card-id');
+            const question = btn.getAttribute('data-question') || '';
+            const answer = btn.getAttribute('data-answer') || '';
+            editCardForm.action = `/cards/${cardId}/update/`;
+            editCardQuestion.value = question;
+            editCardAnswer.value = answer;
+            editCardPhoto.value = '';
+            editCardErrors.innerHTML = '';
+            editCardModal.style.display = 'block';
+        });
+    });
+
+    const closeEditCardBtn = document.getElementById('closeEditCard');
+    if (closeEditCardBtn) {
+        closeEditCardBtn.onclick = () => {
+            editCardModal.style.display = 'none';
+            editCardErrors.innerHTML = '';
+        };
+    }
+    const closeEditCardBtn2 = document.getElementById('closeEditCardBtn');
+    if (closeEditCardBtn2) {
+        closeEditCardBtn2.onclick = () => {
+            editCardModal.style.display = 'none';
+            editCardErrors.innerHTML = '';
+        };
+    }
+
+    if (editCardForm) {
+        editCardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            editCardErrors.innerHTML = '';
+            const resp = await fetch(editCardForm.action, {
+                method: 'POST',
+                body: new FormData(editCardForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                window.location.reload();
+                return;
+            }
+            const errors = data.errors || {};
+            editCardErrors.innerHTML = Object.entries(errors)
+                .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                .join('');
+        });
     }
 
     // Submit edit collection form

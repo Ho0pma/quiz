@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Collection
+from .models import Collection, Card
 
 
 class SignUpForm(UserCreationForm):
@@ -22,3 +22,10 @@ class CollectionForm(forms.ModelForm):
     class Meta:
         model = Collection
         fields = ['name', 'description']
+
+
+class CardForm(forms.ModelForm):
+    class Meta:
+        model = Card
+        fields = ['question', 'photo', 'answer']
+        widgets = {'photo': forms.FileInput(attrs={'accept': 'image/*'})}
