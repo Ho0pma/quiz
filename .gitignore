@@ -4,8 +4,11 @@ __pycache__/
 *$py.class
 
 # Django stuff:
+db.sqlite3
 /media/
 staticfiles/
+*.log
+local_settings.py
 
 # Environment variables
 .env

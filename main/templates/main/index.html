@@ -36,6 +36,20 @@
                             <div class="collection-description">No description</div>
                         {% endif %}
                         <div class="collection-date">Created: {{ collection.created_at|date:"M d, Y" }}</div>
+                        <div class="collection-cards">
+                            <strong>Cards:</strong>
+                            {% for card in collection.cards.all %}
+                                <div class="card-item">
+                                    <div><strong>Q:</strong> {{ card.question }}</div>
+                                    {% if card.photo %}
+                                        <img src="{{ card.photo.url }}" alt="" width="150">
+                                    {% endif %}
+                                    <div><strong>A:</strong> {{ card.answer }}</div>
+                                </div>
+                            {% empty %}
+                                <p>No cards yet.</p>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             {% endfor %}
