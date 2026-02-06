@@ -41,13 +41,16 @@
                             <button type="button" class="add-card-btn" data-collection-id="{{ collection.id }}" onclick="event.stopPropagation();">Add card</button>
                             {% for card in collection.cards.all %}
                                 <div class="card-item" data-card-id="{{ card.id }}">
-                                    <div><strong>Q:</strong> {{ card.question }}</div>
-                                    {% if card.photo %}
-                                        <img src="{{ card.photo.url }}" alt="" width="150">
-                                    {% endif %}
-                                    <div><strong>A:</strong> {{ card.answer }}</div>
-                                    <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" data-has-photo="{% if card.photo %}true{% else %}false{% endif %}" onclick="event.stopPropagation();">Edit</button>
-                                    <button type="button" class="delete-card-btn" data-card-id="{{ card.id }}" onclick="event.stopPropagation();">Delete</button>
+                                    <div class="card-header" style="cursor: pointer;">Card #{{ card.id }}</div>
+                                    <div class="card-content" style="display:none;">
+                                        <div><strong>Q:</strong> {{ card.question }}</div>
+                                        {% if card.photo %}
+                                            <img src="{{ card.photo.url }}" alt="" width="150">
+                                        {% endif %}
+                                        <div><strong>A:</strong> {{ card.answer }}</div>
+                                        <button type="button" class="edit-card-btn" data-card-id="{{ card.id }}" data-question="{{ card.question }}" data-answer="{{ card.answer }}" data-has-photo="{% if card.photo %}true{% else %}false{% endif %}" onclick="event.stopPropagation();">Edit</button>
+                                        <button type="button" class="delete-card-btn" data-card-id="{{ card.id }}" onclick="event.stopPropagation();">Delete</button>
+                                    </div>
                                 </div>
                             {% empty %}
                                 <p>No cards yet.</p>
@@ -324,6 +327,18 @@
             if (e.target.classList.contains('delete-collection-btn') || e.target.classList.contains('edit-collection-btn') || e.target.classList.contains('edit-card-btn') || e.target.classList.contains('delete-card-btn') || e.target.classList.contains('add-card-btn')) {
                 return;
             }
+            // Click on card header: toggle card content only, don't toggle collection
+            const cardHeader = e.target.closest('.card-header');
+            if (cardHeader) {
+                e.stopPropagation();
+                const cardItem = cardHeader.closest('.card-item');
+                const cardContent = cardItem && cardItem.querySelector('.card-content');
+                if (cardContent) {
+                    cardContent.style.display = (cardContent.style.display === 'none' || cardContent.style.display === '') ? 'block' : 'none';
+                }
+                return;
+            }
+            // Click on collection: toggle collection content
             const item = e.target.closest('.collection-item');
             if (item) {
                 const content = item.querySelector('.collection-content');
