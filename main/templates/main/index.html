@@ -9,19 +9,30 @@
 
 <!-- Authorized user -->
 {% if user.is_authenticated %}
-    <div>{{ user.username }}</div>
-
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
-
-    <!-- Collections -->
-    <h2>My Collections</h2>
-    <button type="button" id="openCreateCollection">Create Collection</button>
+    <div id="profile-section">
+        <div class="profile-header">
+            <div>
+                <span>{{ user.username }}</span>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;" onclick="event.stopPropagation();">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+            <div id="profileInfoHeader" style="cursor: pointer;">Profile</div>
+            <div id="profileInfoContent" style="display:none;">
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                {% if user.email %}<p><strong>Email:</strong> {{ user.email }}</p>{% endif %}
+                <p><strong>Joined:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
+            </div>
+            <div id="collectionsHeader" style="cursor: pointer;">Collections</div>
+        </div>
+        <div class="profile-content" id="collectionsContent" style="display:none;">
+            <!-- Collections -->
+            <h2>My Collections</h2>
+            <button type="button" id="openCreateCollection">Create Collection</button>
     
-    {% if collections %}
-        <div id="collections-container">
+            {% if collections %}
+                <div id="collections-container">
             {% for collection in collections %}
                 <div class="collection-item" data-collection-id="{{ collection.id }}" style="cursor: pointer;">
                     <div class="collection-header">
@@ -60,9 +71,11 @@
                 </div>
             {% endfor %}
         </div>
-    {% else %}
-        <p>No collections yet.</p>
-    {% endif %}
+            {% else %}
+                <p>No collections yet.</p>
+            {% endif %}
+        </div>
+    </div>
 {% else %}
     <button type="button" id="openLogin">Sign in</button>
 {% endif %}
@@ -316,6 +329,23 @@
         loginErrorsBox.innerHTML = Object.entries(errors)
             .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
             .join('');
+        });
+    }
+
+    // Profile info expand/collapse
+    const profileInfoHeader = document.getElementById('profileInfoHeader');
+    const profileInfoContent = document.getElementById('profileInfoContent');
+    if (profileInfoHeader && profileInfoContent) {
+        profileInfoHeader.addEventListener('click', () => {
+            profileInfoContent.style.display = (profileInfoContent.style.display === 'none' || profileInfoContent.style.display === '') ? 'block' : 'none';
+        });
+    }
+    // Collections expand/collapse
+    const collectionsHeader = document.getElementById('collectionsHeader');
+    const collectionsContent = document.getElementById('collectionsContent');
+    if (collectionsHeader && collectionsContent) {
+        collectionsHeader.addEventListener('click', () => {
+            collectionsContent.style.display = (collectionsContent.style.display === 'none' || collectionsContent.style.display === '') ? 'block' : 'none';
         });
     }
 
