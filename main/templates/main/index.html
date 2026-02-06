@@ -5,6 +5,154 @@
     <title>Title</title>
 </head>
 <body>
-hi
+
+{% if user.is_authenticated %}
+    <div>{{ user.username }}</div>
+
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Выйти</button>
+    </form>
+{% else %}
+    <button type="button" id="openLogin">Sign in</button>
+{% endif %}
+
+<div id="signupModal" style="display:none;">
+    <div>
+        <button type="button" id="closeSignup">X</button>
+
+        <div id="signupErrors" style="color:red;"></div>
+
+        <form id="signupForm" method="post" action="{% url 'main:signup_ajax' %}">
+            {% csrf_token %}
+            <input name="email" type="email" placeholder="email" required>
+            <input name="username" type="text" placeholder="nickname" required>
+            <input name="password1" type="password" placeholder="password" required>
+            <input name="password2" type="password" placeholder="confirm password" required>
+            <button type="submit">Create account</button>
+            <button type="button" id="switchToLogin">I already have an account</button>
+            <button type="button" id="closeSignupBtn">Close</button>
+        </form>
+    </div>
+</div>
+
+<div id="loginModal" style="display:none;">
+    <div>
+        <button type="button" id="closeLogin">X</button>
+
+        <div id="loginErrors" style="color:red;"></div>
+
+        <form id="loginForm" method="post" action="{% url 'main:login_ajax' %}">
+            {% csrf_token %}
+            <input name="username" type="text" placeholder="nickname" required>
+            <input name="password" type="password" placeholder="password" required>
+            <button type="submit">Log in</button>
+            <button type="button" id="switchToSignup">Create account</button>
+            <button type="button" id="closeLoginBtn">Close</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('signupModal');
+    const errorsBox = document.getElementById('signupErrors');
+    const form = document.getElementById('signupForm');
+
+    const loginModal = document.getElementById('loginModal');
+    const loginErrorsBox = document.getElementById('loginErrors');
+    const loginForm = document.getElementById('loginForm');
+
+    document.getElementById('closeSignup').onclick = () => {
+        modal.style.display = 'none';
+        loginModal.style.display = 'none';
+        document.getElementById('openLogin').disabled = false;
+    };
+    document.getElementById('switchToLogin').onclick = () => {
+        document.getElementById('openLogin').disabled = true;
+        modal.style.display = 'none';
+        errorsBox.innerHTML = '';
+        loginModal.style.display = 'block';
+        loginErrorsBox.innerHTML = '';
+    };
+
+    document.getElementById('switchToSignup').onclick = () => {
+        document.getElementById('openLogin').disabled = true;
+        loginModal.style.display = 'none';
+        loginErrorsBox.innerHTML = '';
+        modal.style.display = 'block';
+        errorsBox.innerHTML = '';
+    };
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorsBox.innerHTML = '';
+
+        const resp = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.ok) {
+            window.location.reload();
+            return;
+        }
+
+        const errors = data.errors || {};
+        errorsBox.innerHTML = Object.entries(errors)
+            .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+            .join('');
+    });
+
+
+    document.getElementById('openLogin').onclick = () => {
+        document.getElementById('openLogin').disabled = true;
+        modal.style.display = 'none';
+        errorsBox.innerHTML = '';
+        loginErrorsBox.innerHTML = '';
+        loginModal.style.display = 'block';
+    };
+    document.getElementById('closeLogin').onclick = () => {
+        loginModal.style.display = 'none';
+        modal.style.display = 'none';
+        document.getElementById('openLogin').disabled = false;
+    };
+    document.getElementById('closeSignupBtn').onclick = () => {
+        modal.style.display = 'none';
+        loginModal.style.display = 'none';
+        document.getElementById('openLogin').disabled = false;
+    };
+
+    document.getElementById('closeLoginBtn').onclick = () => {
+        loginModal.style.display = 'none';
+        modal.style.display = 'none';
+        document.getElementById('openLogin').disabled = false;
+    };
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginErrorsBox.innerHTML = '';
+
+        const resp = await fetch(loginForm.action, {
+            method: 'POST',
+            body: new FormData(loginForm),
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.ok) {
+            window.location.reload();
+            return;
+        }
+
+        const errors = data.errors || {};
+        loginErrorsBox.innerHTML = Object.entries(errors)
+            .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+            .join('');
+    });
+</script>
+
 </body>
 </html>
