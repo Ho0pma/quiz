@@ -22,7 +22,6 @@
             <div id="profileInfoContent" style="display:none;">
                 <p><strong>Username:</strong> {{ user.username }}</p>
                 {% if user.email %}<p><strong>Email:</strong> {{ user.email }}</p>{% endif %}
-                <p><strong>Joined:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
             </div>
             <div id="collectionsHeader" style="cursor: pointer;">Collections</div>
         </div>
