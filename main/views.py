@@ -3,8 +3,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.views import View
 from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-from main.forms import SignUpForm
+from main.forms import SignUpForm, CollectionForm
 from main.models import Collection
 
 
@@ -39,5 +40,26 @@ class LoginAjaxView(View):
                 login(request, user)
                 return JsonResponse({"ok": True})
         return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+
+
+class CreateCollectionAjaxView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        form = CollectionForm(request.POST)
+        if form.is_valid():
+            collection = form.save(commit=False)
+            collection.user = request.user
+            collection.save()
+            return JsonResponse({"ok": True, "id": collection.id, "name": collection.name})
+        return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+
+
+class DeleteCollectionAjaxView(LoginRequiredMixin, View):
+    def post(self, request, collection_id, *args, **kwargs):
+        try:
+            collection = Collection.objects.get(id=collection_id, user=request.user)
+            collection.delete()
+            return JsonResponse({"ok": True})
+        except Collection.DoesNotExist:
+            return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)
 
 

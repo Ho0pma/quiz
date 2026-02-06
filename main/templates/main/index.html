@@ -5,6 +5,7 @@
     <title>Title</title>
 </head>
 <body>
+{% csrf_token %}
 
 <!-- Authorized user -->
 {% if user.is_authenticated %}
@@ -17,18 +18,27 @@
 
     <!-- Collections -->
     <h2>My Collections</h2>
+    <button type="button" id="openCreateCollection">Create Collection</button>
+    
     {% if collections %}
-        <ul>
+        <div id="collections-container">
             {% for collection in collections %}
-                <li>
-                    <h3>{{ collection.name }}</h3>
-                    {% if collection.description %}
-                        <p>{{ collection.description }}</p>
-                    {% endif %}
-                    <small>Created: {{ collection.created_at|date:"M d, Y" }}</small>
-                </li>
+                <div class="collection-item" data-collection-id="{{ collection.id }}" style="cursor: pointer;">
+                    <div class="collection-header">
+                        <strong>{{ collection.name }}</strong> (click to expand)
+                        <button type="button" class="delete-collection-btn" data-collection-id="{{ collection.id }}" onclick="event.stopPropagation();">Delete</button>
+                    </div>
+                    <div class="collection-content" style="display:none;">
+                        {% if collection.description %}
+                            <div class="collection-description">{{ collection.description }}</div>
+                        {% else %}
+                            <div class="collection-description">No description</div>
+                        {% endif %}
+                        <div class="collection-date">Created: {{ collection.created_at|date:"M d, Y" }}</div>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
         <p>No collections yet.</p>
     {% endif %}
@@ -74,6 +84,21 @@
     </div>
 </div>
 
+<!-- Create Collection Modal -->
+<div id="createCollectionModal" style="display:none;">
+    <div>
+        <button type="button" id="closeCreateCollection">X</button>
+        <div id="createCollectionErrors" style="color:red;"></div>
+        <form id="createCollectionForm" method="post" action="{% url 'main:create_collection' %}">
+            {% csrf_token %}
+            <input name="name" type="text" placeholder="Collection name" required>
+            <textarea name="description" placeholder="Description (optional)"></textarea>
+            <button type="submit">Create</button>
+            <button type="button" id="closeCreateCollectionBtn">Close</button>
+        </form>
+    </div>
+</div>
+
 <script>
     // Элементы DOM
     const modal = document.getElementById('signupModal');
@@ -84,32 +109,45 @@
     const loginForm = document.getElementById('loginForm');
 
     // Закрытие модалки регистрации (кнопка X)
-    document.getElementById('closeSignup').onclick = () => {
-        modal.style.display = 'none';
-        loginModal.style.display = 'none';
-        document.getElementById('openLogin').disabled = false;
-    };
+    const closeSignupBtn = document.getElementById('closeSignup');
+    if (closeSignupBtn) {
+        closeSignupBtn.onclick = () => {
+            modal.style.display = 'none';
+            loginModal.style.display = 'none';
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = false;
+        };
+    }
     
     // Переключение с регистрации на вход
-    document.getElementById('switchToLogin').onclick = () => {
-        document.getElementById('openLogin').disabled = true;
-        modal.style.display = 'none';
-        errorsBox.innerHTML = '';
-        loginModal.style.display = 'block';
-        loginErrorsBox.innerHTML = '';
-    };
+    const switchToLoginBtn = document.getElementById('switchToLogin');
+    if (switchToLoginBtn) {
+        switchToLoginBtn.onclick = () => {
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = true;
+            modal.style.display = 'none';
+            errorsBox.innerHTML = '';
+            loginModal.style.display = 'block';
+            loginErrorsBox.innerHTML = '';
+        };
+    }
 
     // Переключение с входа на регистрацию
-    document.getElementById('switchToSignup').onclick = () => {
-        document.getElementById('openLogin').disabled = true;
-        loginModal.style.display = 'none';
-        loginErrorsBox.innerHTML = '';
-        modal.style.display = 'block';
-        errorsBox.innerHTML = '';
-    };
+    const switchToSignupBtn = document.getElementById('switchToSignup');
+    if (switchToSignupBtn) {
+        switchToSignupBtn.onclick = () => {
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = true;
+            loginModal.style.display = 'none';
+            loginErrorsBox.innerHTML = '';
+            modal.style.display = 'block';
+            errorsBox.innerHTML = '';
+        };
+    }
 
     // Отправка формы регистрации (AJAX)
-    form.addEventListener('submit', async (e) => {
+    if (form) {
+        form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorsBox.innerHTML = '';
 
@@ -130,40 +168,57 @@
         errorsBox.innerHTML = Object.entries(errors)
             .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
             .join('');
-    });
+        });
+    }
 
     // Открытие модалки входа
-    document.getElementById('openLogin').onclick = () => {
-        document.getElementById('openLogin').disabled = true;
-        modal.style.display = 'none';
-        errorsBox.innerHTML = '';
-        loginErrorsBox.innerHTML = '';
-        loginModal.style.display = 'block';
-    };
+    const openLoginBtn = document.getElementById('openLogin');
+    if (openLoginBtn) {
+        openLoginBtn.onclick = () => {
+            openLoginBtn.disabled = true;
+            modal.style.display = 'none';
+            errorsBox.innerHTML = '';
+            loginErrorsBox.innerHTML = '';
+            loginModal.style.display = 'block';
+        };
+    }
     
     // Закрытие модалки входа (кнопка X)
-    document.getElementById('closeLogin').onclick = () => {
-        loginModal.style.display = 'none';
-        modal.style.display = 'none';
-        document.getElementById('openLogin').disabled = false;
-    };
+    const closeLoginBtn = document.getElementById('closeLogin');
+    if (closeLoginBtn) {
+        closeLoginBtn.onclick = () => {
+            loginModal.style.display = 'none';
+            modal.style.display = 'none';
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = false;
+        };
+    }
     
     // Закрытие модалки регистрации (кнопка Close)
-    document.getElementById('closeSignupBtn').onclick = () => {
-        modal.style.display = 'none';
-        loginModal.style.display = 'none';
-        document.getElementById('openLogin').disabled = false;
-    };
+    const closeSignupBtn2 = document.getElementById('closeSignupBtn');
+    if (closeSignupBtn2) {
+        closeSignupBtn2.onclick = () => {
+            modal.style.display = 'none';
+            loginModal.style.display = 'none';
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = false;
+        };
+    }
 
     // Закрытие модалки входа (кнопка Close)
-    document.getElementById('closeLoginBtn').onclick = () => {
-        loginModal.style.display = 'none';
-        modal.style.display = 'none';
-        document.getElementById('openLogin').disabled = false;
-    };
+    const closeLoginBtn2 = document.getElementById('closeLoginBtn');
+    if (closeLoginBtn2) {
+        closeLoginBtn2.onclick = () => {
+            loginModal.style.display = 'none';
+            modal.style.display = 'none';
+            const openLoginBtn = document.getElementById('openLogin');
+            if (openLoginBtn) openLoginBtn.disabled = false;
+        };
+    }
     
     // Отправка формы входа (AJAX)
-    loginForm.addEventListener('submit', async (e) => {
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorsBox.innerHTML = '';
 
@@ -184,6 +239,111 @@
         loginErrorsBox.innerHTML = Object.entries(errors)
             .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
             .join('');
+        });
+    }
+
+    // Expandable collections - using event delegation
+    const collectionsContainer = document.getElementById('collections-container');
+    if (collectionsContainer) {
+        collectionsContainer.addEventListener('click', (e) => {
+            // Don't expand if clicking delete button
+            if (e.target.classList.contains('delete-collection-btn')) {
+                return;
+            }
+            const item = e.target.closest('.collection-item');
+            if (item) {
+                const content = item.querySelector('.collection-content');
+                if (content) {
+                    if (content.style.display === 'none' || content.style.display === '') {
+                        content.style.display = 'block';
+                    } else {
+                        content.style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+
+    // Create Collection Modal
+    const createCollectionModal = document.getElementById('createCollectionModal');
+    const createCollectionErrors = document.getElementById('createCollectionErrors');
+    const createCollectionForm = document.getElementById('createCollectionForm');
+    const openCreateCollectionBtn = document.getElementById('openCreateCollection');
+
+    if (openCreateCollectionBtn) {
+        openCreateCollectionBtn.onclick = () => {
+            createCollectionErrors.innerHTML = '';
+            createCollectionModal.style.display = 'block';
+        };
+    }
+
+    const closeCreateCollectionBtn = document.getElementById('closeCreateCollection');
+    if (closeCreateCollectionBtn) {
+        closeCreateCollectionBtn.onclick = () => {
+            createCollectionModal.style.display = 'none';
+            createCollectionErrors.innerHTML = '';
+        };
+    }
+
+    const closeCreateCollectionBtn2 = document.getElementById('closeCreateCollectionBtn');
+    if (closeCreateCollectionBtn2) {
+        closeCreateCollectionBtn2.onclick = () => {
+            createCollectionModal.style.display = 'none';
+            createCollectionErrors.innerHTML = '';
+        };
+    }
+
+    // Submit create collection form
+    if (createCollectionForm) {
+        createCollectionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            createCollectionErrors.innerHTML = '';
+
+            const resp = await fetch(createCollectionForm.action, {
+                method: 'POST',
+                body: new FormData(createCollectionForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.ok) {
+                window.location.reload();
+                return;
+            }
+
+            const errors = data.errors || {};
+            createCollectionErrors.innerHTML = Object.entries(errors)
+                .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                .join('');
+        });
+    }
+
+    // Delete collection
+    document.querySelectorAll('.delete-collection-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm('Are you sure you want to delete this collection?')) {
+                return;
+            }
+
+            const collectionId = btn.getAttribute('data-collection-id');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            const resp = await fetch(`/collections/${collectionId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                },
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting collection');
+            }
+        });
     });
 </script>
 
