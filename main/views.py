@@ -5,7 +5,7 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from main.forms import SignUpForm, CollectionForm, CardForm
+from main.forms import SignUpForm, CollectionForm, CardForm, ProfileForm
 from main.models import Collection, Card
 
 
@@ -45,6 +45,15 @@ class LoginAjaxView(View):
             login(request, user)
             return JsonResponse({"ok": True})
         return JsonResponse({"ok": False, "errors": {"__all__": ["Invalid username/email or password."]}}, status=400)
+
+
+class UpdateProfileAjaxView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"ok": True})
+        return JsonResponse({"ok": False, "errors": form.errors}, status=400)
 
 
 class CreateCollectionAjaxView(LoginRequiredMixin, View):

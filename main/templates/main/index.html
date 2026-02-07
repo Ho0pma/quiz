@@ -20,8 +20,23 @@
             </div>
             <div id="profileInfoHeader" style="cursor: pointer;">Profile</div>
             <div id="profileInfoContent" style="display:none;">
-                <p><strong>Username:</strong> {{ user.username }}</p>
-                {% if user.email %}<p><strong>Email:</strong> {{ user.email }}</p>{% endif %}
+                <div id="profileInfoDisplay">
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    {% if user.email %}<p><strong>Email:</strong> {{ user.email }}</p>{% endif %}
+                    <button type="button" id="profileEditBtn">Edit</button>
+                </div>
+                <div id="profileInfoFormWrap" style="display:none;">
+                    <form id="profileEditForm" method="post" action="{% url 'main:update_profile' %}">
+                        {% csrf_token %}
+                        <label>Username</label>
+                        <input name="username" type="text" id="profileUsername" value="{{ user.username }}" required>
+                        <label>Email</label>
+                        <input name="email" type="email" id="profileEmail" value="{{ user.email|default:'' }}">
+                        <div id="profileEditErrors" style="color:red;"></div>
+                        <button type="submit">Save</button>
+                        <button type="button" id="profileEditCancel">Cancel</button>
+                    </form>
+                </div>
             </div>
             <div id="collectionsHeader" style="cursor: pointer;">Collections</div>
         </div>
@@ -337,6 +352,51 @@
     if (profileInfoHeader && profileInfoContent) {
         profileInfoHeader.addEventListener('click', () => {
             profileInfoContent.style.display = (profileInfoContent.style.display === 'none' || profileInfoContent.style.display === '') ? 'block' : 'none';
+        });
+    }
+    // Profile edit
+    const profileEditBtn = document.getElementById('profileEditBtn');
+    const profileInfoDisplay = document.getElementById('profileInfoDisplay');
+    const profileInfoFormWrap = document.getElementById('profileInfoFormWrap');
+    const profileEditForm = document.getElementById('profileEditForm');
+    const profileEditErrors = document.getElementById('profileEditErrors');
+    const profileEditCancel = document.getElementById('profileEditCancel');
+    if (profileEditBtn && profileInfoDisplay && profileInfoFormWrap) {
+        profileEditBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileInfoDisplay.style.display = 'none';
+            profileInfoFormWrap.style.display = 'block';
+            if (profileEditErrors) profileEditErrors.innerHTML = '';
+        });
+    }
+    if (profileEditCancel && profileInfoDisplay && profileInfoFormWrap) {
+        profileEditCancel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileInfoFormWrap.style.display = 'none';
+            profileInfoDisplay.style.display = 'block';
+            if (profileEditErrors) profileEditErrors.innerHTML = '';
+        });
+    }
+    if (profileEditForm) {
+        profileEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (profileEditErrors) profileEditErrors.innerHTML = '';
+            const resp = await fetch(profileEditForm.action, {
+                method: 'POST',
+                body: new FormData(profileEditForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                window.location.reload();
+                return;
+            }
+            const errors = data.errors || {};
+            if (profileEditErrors) {
+                profileEditErrors.innerHTML = Object.entries(errors)
+                    .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                    .join('');
+            }
         });
     }
     // Collections expand/collapse
