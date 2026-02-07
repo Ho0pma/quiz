@@ -689,9 +689,11 @@
 
     if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => {
         e.stopPropagation();
-        studyWrongCount++;
         const card = studyRemaining[studyIndex];
-        if (card && card.id !== undefined) studyWrongIds.add(card.id);
+        if (card && card.id !== undefined) {
+            if (!studyWrongIds.has(card.id)) studyWrongCount++;
+            studyWrongIds.add(card.id);
+        }
         studyUpdateStats();
         studyNextCard();
     });
