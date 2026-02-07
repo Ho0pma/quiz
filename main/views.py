@@ -154,7 +154,13 @@ class CreateCardAjaxView(LoginRequiredMixin, View):
                 card = form.save(commit=False)
                 card.collection = collection
                 card.save()
-                return JsonResponse({"ok": True, "id": card.id})
+                return JsonResponse({
+                    "ok": True,
+                    "id": card.id,
+                    "question": card.question,
+                    "answer": card.answer,
+                    "photo_url": card.photo.url if card.photo else "",
+                })
             return JsonResponse({"ok": False, "errors": form.errors}, status=400)
         except Collection.DoesNotExist:
             return JsonResponse({"ok": False, "errors": "Collection not found"}, status=404)

@@ -794,6 +794,15 @@
         };
     }
 
+    function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+    function escapeAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     if (createCardForm) {
         createCardForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -805,7 +814,36 @@
             });
             const data = await resp.json();
             if (resp.ok && data.ok) {
-                window.location.reload();
+                const m = createCardForm.action.match(/\/collections\/(\d+)\/cards\/create\/$/);
+                const collectionId = m ? m[1] : null;
+                if (collectionId) {
+                    const container = document.querySelector(`.collection-item[data-collection-id="${collectionId}"] .collection-cards`);
+                    if (container) {
+                        const noCards = container.querySelector('p');
+                        if (noCards && noCards.textContent.trim() === 'No cards yet.') noCards.remove();
+                        const cardItems = container.querySelectorAll('.card-item');
+                        const nextNum = cardItems.length + 1;
+                        const photoHtml = data.photo_url ? `<img src="${escapeAttr(data.photo_url)}" alt="" width="150">` : '';
+                        const cardEl = document.createElement('div');
+                        cardEl.className = 'card-item';
+                        cardEl.dataset.cardId = data.id;
+                        cardEl.innerHTML = `
+                            <div class="card-header" style="cursor: pointer;">Card #${nextNum}</div>
+                            <div class="card-content" style="display:none;">
+                                <div><strong>Q:</strong> <span class="card-q">${escapeHtml(data.question)}</span></div>
+                                ${photoHtml ? `<span class="card-photo-wrap">${photoHtml}</span>` : ''}
+                                <div><strong>A:</strong> <span class="card-a">${escapeHtml(data.answer)}</span></div>
+                                <button type="button" class="edit-card-btn" data-card-id="${data.id}" data-question="${escapeAttr(data.question)}" data-answer="${escapeAttr(data.answer)}" data-has-photo="${data.photo_url ? 'true' : 'false'}" onclick="event.stopPropagation();">Edit</button>
+                                <button type="button" class="delete-card-btn" data-card-id="${data.id}" onclick="event.stopPropagation();">Delete</button>
+                            </div>
+                        `;
+                        container.appendChild(cardEl);
+                    }
+                }
+                createCardQuestion.value = '';
+                createCardAnswer.value = '';
+                createCardPhoto.value = '';
+                createCardErrors.innerHTML = '';
                 return;
             }
             const errors = data.errors || {};
@@ -826,23 +864,26 @@
     const editCardClearPhotoWrap = document.getElementById('editCardClearPhotoWrap');
     const editCardClearPhoto = document.getElementById('editCardClearPhoto');
 
-    document.querySelectorAll('.edit-card-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const cardId = btn.getAttribute('data-card-id');
-            const question = btn.getAttribute('data-question') || '';
-            const answer = btn.getAttribute('data-answer') || '';
-            const hasPhoto = btn.getAttribute('data-has-photo') === 'true';
-            editCardForm.action = `/cards/${cardId}/update/`;
-            editCardQuestion.value = question;
-            editCardAnswer.value = answer;
-            editCardPhoto.value = '';
-            if (editCardClearPhoto) editCardClearPhoto.checked = false;
-            if (editCardClearPhotoWrap) editCardClearPhotoWrap.style.display = hasPhoto ? 'block' : 'none';
-            editCardErrors.innerHTML = '';
-            editCardModal.style.display = 'block';
+    if (collectionsContainer) {
+        collectionsContainer.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-card-btn');
+            if (editBtn) {
+                e.stopPropagation();
+                const cardId = editBtn.getAttribute('data-card-id');
+                const question = editBtn.getAttribute('data-question') || '';
+                const answer = editBtn.getAttribute('data-answer') || '';
+                const hasPhoto = editBtn.getAttribute('data-has-photo') === 'true';
+                editCardForm.action = `/cards/${cardId}/update/`;
+                editCardQuestion.value = question;
+                editCardAnswer.value = answer;
+                editCardPhoto.value = '';
+                if (editCardClearPhoto) editCardClearPhoto.checked = false;
+                if (editCardClearPhotoWrap) editCardClearPhotoWrap.style.display = hasPhoto ? 'block' : 'none';
+                editCardErrors.innerHTML = '';
+                editCardModal.style.display = 'block';
+            }
         });
-    });
+    }
 
     const closeEditCardBtn = document.getElementById('closeEditCard');
     if (closeEditCardBtn) {
@@ -880,12 +921,14 @@
         });
     }
 
-    // Delete card
-    document.querySelectorAll('.delete-card-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+    // Delete card (delegated)
+    if (collectionsContainer) {
+        collectionsContainer.addEventListener('click', async (e) => {
+            const delBtn = e.target.closest('.delete-card-btn');
+            if (!delBtn) return;
             e.stopPropagation();
             if (!confirm('Delete this card?')) return;
-            const cardId = btn.getAttribute('data-card-id');
+            const cardId = delBtn.getAttribute('data-card-id');
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
             const resp = await fetch(`/cards/${cardId}/delete/`, {
                 method: 'POST',
@@ -896,12 +939,19 @@
             });
             const data = await resp.json();
             if (resp.ok && data.ok) {
-                window.location.reload();
+                const cardItem = delBtn.closest('.card-item');
+                const cardsContainer = cardItem && cardItem.parentElement;
+                if (cardItem) cardItem.remove();
+                if (cardsContainer && cardsContainer.classList.contains('collection-cards') && !cardsContainer.querySelector('.card-item')) {
+                    const p = document.createElement('p');
+                    p.textContent = 'No cards yet.';
+                    cardsContainer.appendChild(p);
+                }
             } else {
                 alert('Error deleting card');
             }
         });
-    });
+    }
 
     // Submit edit collection form
     if (editCollectionForm) {
