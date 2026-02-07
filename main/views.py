@@ -1,5 +1,5 @@
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views import View
 from django.views.generic import TemplateView
@@ -31,15 +31,20 @@ class SignUpAjaxView(View):
 
 class LoginAjaxView(View):
     def post(self, request, *args, **kwargs):
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return JsonResponse({"ok": True})
-        return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+        login_value = (request.POST.get('username') or '').strip()
+        password = request.POST.get('password') or ''
+        if not login_value or not password:
+            return JsonResponse({"ok": False, "errors": {"__all__": ["Username/email and password required."]}}, status=400)
+        if '@' in login_value:
+            user_by_email = User.objects.filter(email__iexact=login_value).first()
+            if not user_by_email:
+                return JsonResponse({"ok": False, "errors": {"__all__": ["Invalid email or password."]}}, status=400)
+            login_value = user_by_email.username
+        user = authenticate(request, username=login_value, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"ok": True})
+        return JsonResponse({"ok": False, "errors": {"__all__": ["Invalid username/email or password."]}}, status=400)
 
 
 class CreateCollectionAjaxView(LoginRequiredMixin, View):

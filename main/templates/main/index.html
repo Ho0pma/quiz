@@ -108,7 +108,7 @@
 
         <form id="loginForm" method="post" action="{% url 'main:login_ajax' %}">
             {% csrf_token %}
-            <input name="username" type="text" placeholder="nickname" required>
+            <input name="username" type="text" placeholder="nickname or email" required>
             <input name="password" type="password" placeholder="password" required>
             <button type="submit">Log in</button>
             <button type="button" id="switchToSignup">Create account</button>
