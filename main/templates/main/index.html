@@ -589,6 +589,7 @@
     }
 
     let studyCards = [];
+    let studyRemaining = [];
     let studyIndex = 0;
     let studyShowingBack = false;
     let studyCorrectCount = 0;
@@ -614,8 +615,9 @@
     }
 
     function studyShowCard() {
-        if (studyCards.length === 0) return;
-        const card = studyCards[studyIndex];
+        if (studyRemaining.length === 0) return;
+        studyIndex = studyIndex % studyRemaining.length;
+        const card = studyRemaining[studyIndex];
         studyCardQuestion.textContent = card.q;
         studyCardAnswer.textContent = card.a;
         if (card.p) {
@@ -633,7 +635,8 @@
     const studyDoneMessage = document.getElementById('studyDoneMessage');
 
     function studyNextCard() {
-        studyIndex = (studyIndex + 1) % studyCards.length;
+        if (studyRemaining.length === 0) return;
+        studyIndex = (studyIndex + 1) % studyRemaining.length;
         studyShowCard();
     }
 
@@ -645,6 +648,7 @@
             const col = studyData[cid];
             if (!col || !col.cards || col.cards.length === 0) return;
             studyCards = studyShuffle([...col.cards]);
+            studyRemaining = [...studyCards];
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
@@ -660,7 +664,7 @@
 
     if (studyCardFrame) {
         studyCardFrame.addEventListener('click', () => {
-            if (studyCards.length === 0) return;
+            if (studyRemaining.length === 0) return;
             studyShowingBack = !studyShowingBack;
             studyCardFront.style.display = studyShowingBack ? 'none' : '';
             studyCardBack.style.display = studyShowingBack ? '' : 'none';
@@ -672,11 +676,13 @@
         e.stopPropagation();
         studyCorrectCount++;
         studyUpdateStats();
-        if (studyCards.length > 0 && studyCorrectCount >= studyCards.length) {
+        studyRemaining.splice(studyIndex, 1);
+        if (studyRemaining.length === 0) {
             if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
             if (studyDoneMessage) studyDoneMessage.style.display = 'block';
         } else {
-            studyNextCard();
+            studyIndex = studyIndex % studyRemaining.length;
+            studyShowCard();
         }
     });
 
@@ -693,6 +699,7 @@
     if (studyAgainBtn) {
         studyAgainBtn.addEventListener('click', () => {
             studyCards = studyShuffle([...studyCards]);
+            studyRemaining = [...studyCards];
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
