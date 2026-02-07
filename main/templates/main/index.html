@@ -53,6 +53,36 @@
                     <button type="submit">Change password</button>
                 </form>
             </div>
+            <div id="studyHeader" style="cursor: pointer;">Study</div>
+            <div id="studyContent" style="display:none;">
+                <div id="studyChooseCollection">
+                    <p>Choose collection</p>
+                    {% for c in collections %}
+                        {% if c.cards.all %}
+                        <button type="button" class="study-pick-collection" data-collection-id="{{ c.id }}">{{ c.name }}</button>
+                        {% endif %}
+                    {% empty %}
+                    <p>No collections with cards yet.</p>
+                    {% endfor %}
+                </div>
+                <div id="studyCardArea" style="display:none;">
+                    <div id="studyCardFrame" style="cursor: pointer; border: 1px solid #ccc; padding: 1em; min-height: 120px;">
+                        <div id="studyCardFront">
+                            <div id="studyCardQuestion"></div>
+                            <img id="studyCardPhoto" src="" alt="" style="max-width: 200px; display: none;">
+                        </div>
+                        <div id="studyCardBack" style="display: none;">
+                            <div id="studyCardAnswer"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" id="studyBtnWrong">✗</button>
+                        <button type="button" id="studyBtnRight">✓</button>
+                    </div>
+                    <button type="button" id="studyBackToCollections">Back to collections</button>
+                </div>
+            </div>
+            <script type="application/json" id="studyDataJson">{{ study_data|default:"{}"|safe }}</script>
         </div>
         <div class="profile-content" id="collectionsContent" style="display:none;">
             <!-- Collections -->
@@ -509,6 +539,94 @@
                     .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
                     .join('');
             }
+        });
+    }
+
+    // Study
+    const studyHeader = document.getElementById('studyHeader');
+    const studyContent = document.getElementById('studyContent');
+    const studyChooseCollection = document.getElementById('studyChooseCollection');
+    const studyCardArea = document.getElementById('studyCardArea');
+    const studyCardFrame = document.getElementById('studyCardFrame');
+    const studyCardFront = document.getElementById('studyCardFront');
+    const studyCardBack = document.getElementById('studyCardBack');
+    const studyCardQuestion = document.getElementById('studyCardQuestion');
+    const studyCardPhoto = document.getElementById('studyCardPhoto');
+    const studyCardAnswer = document.getElementById('studyCardAnswer');
+    const studyBtnWrong = document.getElementById('studyBtnWrong');
+    const studyBtnRight = document.getElementById('studyBtnRight');
+    const studyBackToCollections = document.getElementById('studyBackToCollections');
+
+    if (studyHeader && studyContent) {
+        studyHeader.addEventListener('click', () => {
+            studyContent.style.display = (studyContent.style.display === 'none' || studyContent.style.display === '') ? 'block' : 'none';
+        });
+    }
+
+    let studyCards = [];
+    let studyIndex = 0;
+    let studyShowingBack = false;
+
+    function studyShuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function studyShowCard() {
+        if (studyCards.length === 0) return;
+        const card = studyCards[studyIndex];
+        studyCardQuestion.textContent = card.q;
+        studyCardAnswer.textContent = card.a;
+        if (card.p) {
+            studyCardPhoto.src = card.p;
+            studyCardPhoto.style.display = '';
+        } else {
+            studyCardPhoto.style.display = 'none';
+        }
+        studyCardFront.style.display = '';
+        studyCardBack.style.display = 'none';
+        studyShowingBack = false;
+    }
+
+    function studyNextCard() {
+        studyIndex = (studyIndex + 1) % studyCards.length;
+        studyShowCard();
+    }
+
+    document.querySelectorAll('.study-pick-collection').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const el = document.getElementById('studyDataJson');
+            const studyData = el ? JSON.parse(el.textContent || '{}') : {};
+            const cid = btn.getAttribute('data-collection-id');
+            const col = studyData[cid];
+            if (!col || !col.cards || col.cards.length === 0) return;
+            studyCards = studyShuffle([...col.cards]);
+            studyIndex = 0;
+            studyChooseCollection.style.display = 'none';
+            studyCardArea.style.display = 'block';
+            studyShowCard();
+        });
+    });
+
+    if (studyCardFrame) {
+        studyCardFrame.addEventListener('click', () => {
+            if (studyCards.length === 0) return;
+            studyShowingBack = !studyShowingBack;
+            studyCardFront.style.display = studyShowingBack ? 'none' : '';
+            studyCardBack.style.display = studyShowingBack ? '' : 'none';
+        });
+    }
+
+    if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => { e.stopPropagation(); studyNextCard(); });
+    if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => { e.stopPropagation(); studyNextCard(); });
+
+    if (studyBackToCollections) {
+        studyBackToCollections.addEventListener('click', () => {
+            studyCardArea.style.display = 'none';
+            studyChooseCollection.style.display = 'block';
         });
     }
 

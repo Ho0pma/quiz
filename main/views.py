@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
@@ -20,7 +21,13 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            context['collections'] = Collection.objects.filter(user=self.request.user).prefetch_related('cards')
+            collections = Collection.objects.filter(user=self.request.user).prefetch_related('cards')
+            context['collections'] = collections
+            study_data = {}
+            for c in collections:
+                cards = [{'id': card.id, 'q': card.question, 'a': card.answer, 'p': card.photo.url if card.photo else ''} for card in c.cards.all()]
+                study_data[str(c.id)] = {'name': c.name, 'cards': cards}
+            context['study_data'] = json.dumps(study_data)
         return context
 
 
