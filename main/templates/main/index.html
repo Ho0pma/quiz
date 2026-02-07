@@ -110,7 +110,7 @@
                             <button type="button" class="add-card-btn" data-collection-id="{{ collection.id }}" onclick="event.stopPropagation();">Add card</button>
                             {% for card in collection.cards.all %}
                                 <div class="card-item" data-card-id="{{ card.id }}">
-                                    <div class="card-header" style="cursor: pointer;">Card #{{ card.id }}</div>
+                                    <div class="card-header" style="cursor: pointer;">Card #{{ forloop.counter }}</div>
                                     <div class="card-content" style="display:none;">
                                         <div><strong>Q:</strong> {{ card.question }}</div>
                                         {% if card.photo %}
