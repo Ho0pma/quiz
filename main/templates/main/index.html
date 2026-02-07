@@ -590,10 +590,12 @@
 
     let studyCards = [];
     let studyRemaining = [];
+    let studyWrongIds = new Set();
     let studyIndex = 0;
     let studyShowingBack = false;
     let studyCorrectCount = 0;
     let studyWrongCount = 0;
+    const STUDY_WRONG_WEIGHT = 4;
 
     const studyCollectionNameEl = document.getElementById('studyCollectionName');
     const studyTotalCardsEl = document.getElementById('studyTotalCards');
@@ -634,9 +636,21 @@
     const studyCardPlayArea = document.getElementById('studyCardPlayArea');
     const studyDoneMessage = document.getElementById('studyDoneMessage');
 
+    function studyPickNextIndex() {
+        if (studyRemaining.length === 0) return 0;
+        const weights = studyRemaining.map(c => studyWrongIds.has(c.id) ? STUDY_WRONG_WEIGHT : 1);
+        const total = weights.reduce((a, b) => a + b, 0);
+        let r = Math.random() * total;
+        for (let i = 0; i < studyRemaining.length; i++) {
+            r -= weights[i];
+            if (r < 0) return i;
+        }
+        return 0;
+    }
+
     function studyNextCard() {
         if (studyRemaining.length === 0) return;
-        studyIndex = (studyIndex + 1) % studyRemaining.length;
+        studyIndex = studyPickNextIndex();
         studyShowCard();
     }
 
@@ -649,6 +663,7 @@
             if (!col || !col.cards || col.cards.length === 0) return;
             studyCards = studyShuffle([...col.cards]);
             studyRemaining = [...studyCards];
+            studyWrongIds = new Set();
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
@@ -658,6 +673,7 @@
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             studyChooseCollection.style.display = 'none';
             studyCardArea.style.display = 'block';
+            studyIndex = studyPickNextIndex();
             studyShowCard();
         });
     });
@@ -671,17 +687,26 @@
         });
     }
 
-    if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => { e.stopPropagation(); studyWrongCount++; studyUpdateStats(); studyNextCard(); });
+    if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => {
+        e.stopPropagation();
+        studyWrongCount++;
+        const card = studyRemaining[studyIndex];
+        if (card && card.id !== undefined) studyWrongIds.add(card.id);
+        studyUpdateStats();
+        studyNextCard();
+    });
     if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => {
         e.stopPropagation();
         studyCorrectCount++;
+        const card = studyRemaining[studyIndex];
+        if (card && card.id !== undefined) studyWrongIds.delete(card.id);
         studyUpdateStats();
         studyRemaining.splice(studyIndex, 1);
         if (studyRemaining.length === 0) {
             if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
             if (studyDoneMessage) studyDoneMessage.style.display = 'block';
         } else {
-            studyIndex = studyIndex % studyRemaining.length;
+            studyIndex = studyPickNextIndex();
             studyShowCard();
         }
     });
@@ -700,12 +725,14 @@
         studyAgainBtn.addEventListener('click', () => {
             studyCards = studyShuffle([...studyCards]);
             studyRemaining = [...studyCards];
+            studyWrongIds = new Set();
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
             studyUpdateStats();
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+            studyIndex = studyPickNextIndex();
             studyShowCard();
         });
     }
