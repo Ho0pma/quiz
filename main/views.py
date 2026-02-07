@@ -1,6 +1,11 @@
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.http import JsonResponse
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -45,6 +50,29 @@ class LoginAjaxView(View):
             login(request, user)
             return JsonResponse({"ok": True})
         return JsonResponse({"ok": False, "errors": {"__all__": ["Invalid username/email or password."]}}, status=400)
+
+
+class ForgotPasswordView(View):
+    def post(self, request, *args, **kwargs):
+        email = (request.POST.get('email') or '').strip().lower()
+        if not email:
+            return JsonResponse({"ok": False, "errors": {"email": ["Email is required."]}}, status=400)
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            reset_url = request.build_absolute_uri(reverse('main:password_reset_confirm', kwargs={'uidb64': uid, 'token': token}))
+            try:
+                send_mail(
+                    subject='Password reset',
+                    message=f'Use this link to set a new password:\n{reset_url}',
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+        return JsonResponse({"ok": True})
 
 
 class UpdateProfileAjaxView(LoginRequiredMixin, View):

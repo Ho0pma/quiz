@@ -143,6 +143,17 @@
             <button type="button" id="switchToSignup">Create account</button>
             <button type="button" id="closeLoginBtn">Close</button>
         </form>
+        <button type="button" id="forgotPasswordBtn">Forgot your password?</button>
+        <div id="forgotPasswordWrap" style="display:none;">
+            <p>Enter your email to receive a reset link.</p>
+            <form id="forgotPasswordForm" method="post" action="{% url 'main:forgot_password' %}">
+                {% csrf_token %}
+                <input name="email" type="email" placeholder="email" required>
+                <button type="submit">Send reset link</button>
+                <button type="button" id="forgotPasswordCancel">Back</button>
+            </form>
+            <div id="forgotPasswordMessage" style="color:green;"></div>
+        </div>
     </div>
 </div>
 
@@ -307,9 +318,52 @@
         closeLoginBtn.onclick = () => {
             loginModal.style.display = 'none';
             modal.style.display = 'none';
+            const forgotWrap = document.getElementById('forgotPasswordWrap');
+            if (forgotWrap) forgotWrap.style.display = 'none';
             const openLoginBtn = document.getElementById('openLogin');
             if (openLoginBtn) openLoginBtn.disabled = false;
         };
+    }
+    // Forgot password
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+    const forgotPasswordWrap = document.getElementById('forgotPasswordWrap');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const forgotPasswordMessage = document.getElementById('forgotPasswordMessage');
+    const forgotPasswordCancel = document.getElementById('forgotPasswordCancel');
+    if (forgotPasswordBtn && forgotPasswordWrap) {
+        forgotPasswordBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            forgotPasswordWrap.style.display = 'block';
+            if (forgotPasswordMessage) forgotPasswordMessage.textContent = '';
+        });
+    }
+    if (forgotPasswordCancel && forgotPasswordWrap) {
+        forgotPasswordCancel.addEventListener('click', () => {
+            forgotPasswordWrap.style.display = 'none';
+            if (forgotPasswordMessage) forgotPasswordMessage.textContent = '';
+        });
+    }
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (forgotPasswordMessage) forgotPasswordMessage.textContent = '';
+            const resp = await fetch(forgotPasswordForm.action, {
+                method: 'POST',
+                body: new FormData(forgotPasswordForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                if (forgotPasswordMessage) forgotPasswordMessage.textContent = "If an account exists with that email, we've sent a reset link.";
+                forgotPasswordForm.reset();
+                return;
+            }
+            const errors = data.errors || {};
+            if (forgotPasswordMessage) {
+                forgotPasswordMessage.style.color = 'red';
+                forgotPasswordMessage.textContent = Object.entries(errors).map(([f, msgs]) => msgs.join(', ')).join(' ');
+            }
+        });
     }
     
     // Закрытие модалки регистрации (кнопка Close)
@@ -329,6 +383,8 @@
         closeLoginBtn2.onclick = () => {
             loginModal.style.display = 'none';
             modal.style.display = 'none';
+            const fw = document.getElementById('forgotPasswordWrap');
+            if (fw) fw.style.display = 'none';
             const openLoginBtn = document.getElementById('openLogin');
             if (openLoginBtn) openLoginBtn.disabled = false;
         };
