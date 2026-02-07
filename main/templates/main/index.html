@@ -87,6 +87,7 @@
                     </div>
                     <div id="studyDoneMessage" style="display: none; margin: 1em 0; padding: 1em; background: #e8f5e9; border-radius: 8px;">
                         <p style="margin: 0 0 0.5em 0; font-weight: bold;">Done! Study again?</p>
+                        <div id="studyDoneStats" style="margin: 0.5em 0; font-size: 0.9em; color: #333;"></div>
                         <button type="button" id="studyAgainBtn">Study again</button>
                         <button type="button" id="studyDoneBackBtn">Back to collections</button>
                     </div>
@@ -591,6 +592,7 @@
     let studyCards = [];
     let studyRemaining = [];
     let studyWrongIds = new Set();
+    let studyWrongCountByCardId = {};
     let studyIndex = 0;
     let studyShowingBack = false;
     let studyCorrectCount = 0;
@@ -635,6 +637,27 @@
 
     const studyCardPlayArea = document.getElementById('studyCardPlayArea');
     const studyDoneMessage = document.getElementById('studyDoneMessage');
+    const studyDoneStatsEl = document.getElementById('studyDoneStats');
+
+    function studyRenderDoneStats() {
+        if (!studyDoneStatsEl) return;
+        const entries = [];
+        studyCards.forEach(c => {
+            const n = studyWrongCountByCardId[c.id];
+            if (n != null && n > 0) entries.push({ q: c.q, n });
+        });
+        if (entries.length === 0) {
+            studyDoneStatsEl.innerHTML = '';
+            return;
+        }
+        const maxLen = 50;
+        studyDoneStatsEl.innerHTML = '<strong>Wrong answers per card:</strong><ul style="margin: 0.25em 0 0 1em; padding-left: 1em;">' +
+            entries.map(e => {
+                const snippet = e.q.length > maxLen ? e.q.slice(0, maxLen) + '…' : e.q;
+                const esc = snippet.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return '<li>' + esc + ' — <strong>' + e.n + '</strong> wrong</li>';
+            }).join('') + '</ul>';
+    }
 
     function studyPickNextIndex() {
         if (studyRemaining.length === 0) return 0;
@@ -664,6 +687,7 @@
             studyCards = studyShuffle([...col.cards]);
             studyRemaining = [...studyCards];
             studyWrongIds = new Set();
+            studyWrongCountByCardId = {};
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
@@ -671,6 +695,7 @@
             studyUpdateStats();
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
+            if (studyDoneStatsEl) studyDoneStatsEl.innerHTML = '';
             studyChooseCollection.style.display = 'none';
             studyCardArea.style.display = 'block';
             studyIndex = studyPickNextIndex();
@@ -693,6 +718,7 @@
         if (card && card.id !== undefined) {
             if (!studyWrongIds.has(card.id)) studyWrongCount++;
             studyWrongIds.add(card.id);
+            studyWrongCountByCardId[card.id] = (studyWrongCountByCardId[card.id] || 0) + 1;
         }
         studyUpdateStats();
         studyNextCard();
@@ -707,6 +733,7 @@
         if (studyRemaining.length === 0) {
             if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
             if (studyDoneMessage) studyDoneMessage.style.display = 'block';
+            studyRenderDoneStats();
         } else {
             studyIndex = studyPickNextIndex();
             studyShowCard();
@@ -728,12 +755,14 @@
             studyCards = studyShuffle([...studyCards]);
             studyRemaining = [...studyCards];
             studyWrongIds = new Set();
+            studyWrongCountByCardId = {};
             studyIndex = 0;
             studyCorrectCount = 0;
             studyWrongCount = 0;
             studyUpdateStats();
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+            if (studyDoneStatsEl) studyDoneStatsEl.innerHTML = '';
             studyIndex = studyPickNextIndex();
             studyShowCard();
         });
