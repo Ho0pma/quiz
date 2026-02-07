@@ -446,12 +446,31 @@
         });
     }
 
-    // Profile info expand/collapse
+    // Accordion: only one profile block open at a time
     const profileInfoHeader = document.getElementById('profileInfoHeader');
     const profileInfoContent = document.getElementById('profileInfoContent');
+    const collectionsHeader = document.getElementById('collectionsHeader');
+    const collectionsContent = document.getElementById('collectionsContent');
+    const changePasswordHeader = document.getElementById('changePasswordHeader');
+    const changePasswordContent = document.getElementById('changePasswordContent');
+    const studyHeader = document.getElementById('studyHeader');
+    const studyContent = document.getElementById('studyContent');
+
+    const profileContentBlocks = [profileInfoContent, collectionsContent, changePasswordContent, studyContent].filter(Boolean);
+    function closeOtherProfileBlocks(exceptEl) {
+        profileContentBlocks.forEach(el => {
+            if (el && el !== exceptEl) el.style.display = 'none';
+        });
+    }
+    function toggleProfileBlock(contentEl) {
+        const isHidden = !contentEl || contentEl.style.display === 'none' || contentEl.style.display === '';
+        if (contentEl) contentEl.style.display = isHidden ? 'block' : 'none';
+    }
+
     if (profileInfoHeader && profileInfoContent) {
         profileInfoHeader.addEventListener('click', () => {
-            profileInfoContent.style.display = (profileInfoContent.style.display === 'none' || profileInfoContent.style.display === '') ? 'block' : 'none';
+            closeOtherProfileBlocks(profileInfoContent);
+            toggleProfileBlock(profileInfoContent);
         });
     }
     // Profile edit
@@ -499,22 +518,19 @@
             }
         });
     }
-    // Collections expand/collapse
-    const collectionsHeader = document.getElementById('collectionsHeader');
-    const collectionsContent = document.getElementById('collectionsContent');
     if (collectionsHeader && collectionsContent) {
         collectionsHeader.addEventListener('click', () => {
-            collectionsContent.style.display = (collectionsContent.style.display === 'none' || collectionsContent.style.display === '') ? 'block' : 'none';
+            closeOtherProfileBlocks(collectionsContent);
+            toggleProfileBlock(collectionsContent);
         });
     }
     // Change password expand/collapse and submit
-    const changePasswordHeader = document.getElementById('changePasswordHeader');
-    const changePasswordContent = document.getElementById('changePasswordContent');
     const changePasswordForm = document.getElementById('changePasswordForm');
     const changePasswordErrors = document.getElementById('changePasswordErrors');
     if (changePasswordHeader && changePasswordContent) {
         changePasswordHeader.addEventListener('click', () => {
-            changePasswordContent.style.display = (changePasswordContent.style.display === 'none' || changePasswordContent.style.display === '') ? 'block' : 'none';
+            closeOtherProfileBlocks(changePasswordContent);
+            toggleProfileBlock(changePasswordContent);
             if (changePasswordErrors) changePasswordErrors.innerHTML = '';
         });
     }
@@ -543,8 +559,6 @@
     }
 
     // Study
-    const studyHeader = document.getElementById('studyHeader');
-    const studyContent = document.getElementById('studyContent');
     const studyChooseCollection = document.getElementById('studyChooseCollection');
     const studyCardArea = document.getElementById('studyCardArea');
     const studyCardFrame = document.getElementById('studyCardFrame');
@@ -559,7 +573,8 @@
 
     if (studyHeader && studyContent) {
         studyHeader.addEventListener('click', () => {
-            studyContent.style.display = (studyContent.style.display === 'none' || studyContent.style.display === '') ? 'block' : 'none';
+            closeOtherProfileBlocks(studyContent);
+            toggleProfileBlock(studyContent);
         });
     }
 
