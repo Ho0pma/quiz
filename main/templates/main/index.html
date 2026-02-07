@@ -39,6 +39,20 @@
                 </div>
             </div>
             <div id="collectionsHeader" style="cursor: pointer;">Collections</div>
+            <div id="changePasswordHeader" style="cursor: pointer;">Change password</div>
+            <div id="changePasswordContent" style="display:none;">
+                <form id="changePasswordForm" method="post" action="{% url 'main:change_password' %}">
+                    {% csrf_token %}
+                    <label>Current password</label>
+                    <input name="old_password" type="password" required>
+                    <label>New password</label>
+                    <input name="new_password1" type="password" required>
+                    <label>Confirm new password</label>
+                    <input name="new_password2" type="password" required>
+                    <div id="changePasswordErrors" style="color:red;"></div>
+                    <button type="submit">Change password</button>
+                </form>
+            </div>
         </div>
         <div class="profile-content" id="collectionsContent" style="display:none;">
             <!-- Collections -->
@@ -405,6 +419,40 @@
     if (collectionsHeader && collectionsContent) {
         collectionsHeader.addEventListener('click', () => {
             collectionsContent.style.display = (collectionsContent.style.display === 'none' || collectionsContent.style.display === '') ? 'block' : 'none';
+        });
+    }
+    // Change password expand/collapse and submit
+    const changePasswordHeader = document.getElementById('changePasswordHeader');
+    const changePasswordContent = document.getElementById('changePasswordContent');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    const changePasswordErrors = document.getElementById('changePasswordErrors');
+    if (changePasswordHeader && changePasswordContent) {
+        changePasswordHeader.addEventListener('click', () => {
+            changePasswordContent.style.display = (changePasswordContent.style.display === 'none' || changePasswordContent.style.display === '') ? 'block' : 'none';
+            if (changePasswordErrors) changePasswordErrors.innerHTML = '';
+        });
+    }
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (changePasswordErrors) changePasswordErrors.innerHTML = '';
+            const resp = await fetch(changePasswordForm.action, {
+                method: 'POST',
+                body: new FormData(changePasswordForm),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+                changePasswordForm.reset();
+                if (changePasswordErrors) changePasswordErrors.innerHTML = '<span style="color:green;">Password changed.</span>';
+                return;
+            }
+            const errors = data.errors || {};
+            if (changePasswordErrors) {
+                changePasswordErrors.innerHTML = Object.entries(errors)
+                    .map(([field, msgs]) => `<div><b>${field}</b>: ${msgs.join(', ')}</div>`)
+                    .join('');
+            }
         });
     }
 

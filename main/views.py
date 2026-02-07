@@ -56,6 +56,25 @@ class UpdateProfileAjaxView(LoginRequiredMixin, View):
         return JsonResponse({"ok": False, "errors": form.errors}, status=400)
 
 
+class ChangePasswordAjaxView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        old_password = request.POST.get('old_password') or ''
+        new_password1 = request.POST.get('new_password1') or ''
+        new_password2 = request.POST.get('new_password2') or ''
+        errors = {}
+        if not request.user.check_password(old_password):
+            errors['old_password'] = ['Current password is wrong.']
+        if not new_password1:
+            errors['new_password1'] = ['New password is required.']
+        elif new_password1 != new_password2:
+            errors['new_password2'] = ['Passwords do not match.']
+        if errors:
+            return JsonResponse({"ok": False, "errors": errors}, status=400)
+        request.user.set_password(new_password1)
+        request.user.save()
+        return JsonResponse({"ok": True})
+
+
 class CreateCollectionAjaxView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         form = CollectionForm(request.POST)
