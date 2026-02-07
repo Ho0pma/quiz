@@ -66,20 +66,30 @@
                     {% endfor %}
                 </div>
                 <div id="studyCardArea" style="display:none;">
-                    <div id="studyCardFrame" style="cursor: pointer; border: 1px solid #ccc; padding: 1em; min-height: 120px;">
-                        <div id="studyCardFront">
-                            <div id="studyCardQuestion"></div>
-                            <img id="studyCardPhoto" src="" alt="" style="max-width: 200px; display: none;">
-                        </div>
-                        <div id="studyCardBack" style="display: none;">
-                            <div id="studyCardAnswer"></div>
-                        </div>
+                    <div id="studyCardStats" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border-radius: 4px;">
+                        <span id="studyCollectionName"></span> · <span id="studyTotalCards">0</span> cards · ✓ <span id="studyCorrectCount">0</span> · ✗ <span id="studyWrongCount">0</span>
                     </div>
-                    <div>
-                        <button type="button" id="studyBtnWrong">✗</button>
-                        <button type="button" id="studyBtnRight">✓</button>
+                    <div id="studyCardPlayArea">
+                        <div id="studyCardFrame" style="cursor: pointer; border: 1px solid #ccc; padding: 1em; min-height: 120px;">
+                            <div id="studyCardFront">
+                                <div id="studyCardQuestion"></div>
+                                <img id="studyCardPhoto" src="" alt="" style="max-width: 200px; display: none;">
+                            </div>
+                            <div id="studyCardBack" style="display: none;">
+                                <div id="studyCardAnswer"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" id="studyBtnWrong">✗</button>
+                            <button type="button" id="studyBtnRight">✓</button>
+                        </div>
+                        <button type="button" id="studyBackToCollections">Back to collections</button>
                     </div>
-                    <button type="button" id="studyBackToCollections">Back to collections</button>
+                    <div id="studyDoneMessage" style="display: none; margin: 1em 0; padding: 1em; background: #e8f5e9; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5em 0; font-weight: bold;">Done! Study again?</p>
+                        <button type="button" id="studyAgainBtn">Study again</button>
+                        <button type="button" id="studyDoneBackBtn">Back to collections</button>
+                    </div>
                 </div>
             </div>
             <script type="application/json" id="studyDataJson">{{ study_data|default:"{}"|safe }}</script>
@@ -581,6 +591,19 @@
     let studyCards = [];
     let studyIndex = 0;
     let studyShowingBack = false;
+    let studyCorrectCount = 0;
+    let studyWrongCount = 0;
+
+    const studyCollectionNameEl = document.getElementById('studyCollectionName');
+    const studyTotalCardsEl = document.getElementById('studyTotalCards');
+    const studyCorrectCountEl = document.getElementById('studyCorrectCount');
+    const studyWrongCountEl = document.getElementById('studyWrongCount');
+
+    function studyUpdateStats() {
+        if (studyTotalCardsEl) studyTotalCardsEl.textContent = studyCards.length;
+        if (studyCorrectCountEl) studyCorrectCountEl.textContent = studyCorrectCount;
+        if (studyWrongCountEl) studyWrongCountEl.textContent = studyWrongCount;
+    }
 
     function studyShuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
@@ -606,6 +629,9 @@
         studyShowingBack = false;
     }
 
+    const studyCardPlayArea = document.getElementById('studyCardPlayArea');
+    const studyDoneMessage = document.getElementById('studyDoneMessage');
+
     function studyNextCard() {
         studyIndex = (studyIndex + 1) % studyCards.length;
         studyShowCard();
@@ -620,6 +646,12 @@
             if (!col || !col.cards || col.cards.length === 0) return;
             studyCards = studyShuffle([...col.cards]);
             studyIndex = 0;
+            studyCorrectCount = 0;
+            studyWrongCount = 0;
+            if (studyCollectionNameEl) studyCollectionNameEl.textContent = col.name || btn.textContent.trim() || 'Collection';
+            studyUpdateStats();
+            if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+            if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             studyChooseCollection.style.display = 'none';
             studyCardArea.style.display = 'block';
             studyShowCard();
@@ -635,13 +667,47 @@
         });
     }
 
-    if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => { e.stopPropagation(); studyNextCard(); });
-    if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => { e.stopPropagation(); studyNextCard(); });
+    if (studyBtnWrong) studyBtnWrong.addEventListener('click', (e) => { e.stopPropagation(); studyWrongCount++; studyUpdateStats(); studyNextCard(); });
+    if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => {
+        e.stopPropagation();
+        studyCorrectCount++;
+        studyUpdateStats();
+        if (studyCards.length > 0 && studyCorrectCount >= studyCards.length) {
+            if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
+            if (studyDoneMessage) studyDoneMessage.style.display = 'block';
+        } else {
+            studyNextCard();
+        }
+    });
 
     if (studyBackToCollections) {
         studyBackToCollections.addEventListener('click', () => {
             studyCardArea.style.display = 'none';
             studyChooseCollection.style.display = 'block';
+            if (studyDoneMessage) studyDoneMessage.style.display = 'none';
+            if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+        });
+    }
+    const studyAgainBtn = document.getElementById('studyAgainBtn');
+    const studyDoneBackBtn = document.getElementById('studyDoneBackBtn');
+    if (studyAgainBtn) {
+        studyAgainBtn.addEventListener('click', () => {
+            studyCards = studyShuffle([...studyCards]);
+            studyIndex = 0;
+            studyCorrectCount = 0;
+            studyWrongCount = 0;
+            studyUpdateStats();
+            if (studyDoneMessage) studyDoneMessage.style.display = 'none';
+            if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+            studyShowCard();
+        });
+    }
+    if (studyDoneBackBtn) {
+        studyDoneBackBtn.addEventListener('click', () => {
+            studyCardArea.style.display = 'none';
+            studyChooseCollection.style.display = 'block';
+            if (studyDoneMessage) studyDoneMessage.style.display = 'none';
+            if (studyCardPlayArea) studyCardPlayArea.style.display = '';
         });
     }
 
