@@ -67,7 +67,7 @@
                 </div>
                 <div id="studyCardArea" style="display:none;">
                     <div id="studyCardStats" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border-radius: 4px;">
-                        <span id="studyCollectionName"></span> · <span id="studyTotalCards">0</span> cards · ✓ <span id="studyCorrectCount">0</span> · ✗ <span id="studyWrongCount">0</span>
+                        <span id="studyCollectionName"></span> · <span id="studyTotalCards">0</span> cards · ✓<span id="studyCorrectCount">0</span> [<span id="studyBucket1Count">0</span>] [<span id="studyBucket2Count">0</span>] [<span id="studyBucket3Count">0</span>] ✗<span id="studyCrossCount">0</span>
                     </div>
                     <div id="studyCardPlayArea">
                         <div id="studyCardFrame" style="cursor: pointer; border: 1px solid #ccc; padding: 1em; min-height: 120px;">
@@ -591,23 +591,34 @@
 
     let studyCards = [];
     let studyRemaining = [];
-    let studyWrongIds = new Set();
+    let studyCardBucket = {};
     let studyWrongCountByCardId = {};
     let studyIndex = 0;
     let studyShowingBack = false;
     let studyCorrectCount = 0;
-    let studyWrongCount = 0;
     const STUDY_WRONG_WEIGHT = 4;
 
     const studyCollectionNameEl = document.getElementById('studyCollectionName');
     const studyTotalCardsEl = document.getElementById('studyTotalCards');
     const studyCorrectCountEl = document.getElementById('studyCorrectCount');
-    const studyWrongCountEl = document.getElementById('studyWrongCount');
+    const studyBucket1El = document.getElementById('studyBucket1Count');
+    const studyBucket2El = document.getElementById('studyBucket2Count');
+    const studyBucket3El = document.getElementById('studyBucket3Count');
+    const studyCrossEl = document.getElementById('studyCrossCount');
 
     function studyUpdateStats() {
         if (studyTotalCardsEl) studyTotalCardsEl.textContent = studyCards.length;
-        if (studyCorrectCountEl) studyCorrectCountEl.textContent = studyCorrectCount;
-        if (studyWrongCountEl) studyWrongCountEl.textContent = studyWrongCount;
+        const doneCount = studyCards.length - studyRemaining.length;
+        if (studyCorrectCountEl) studyCorrectCountEl.textContent = doneCount;
+        let c1 = 0, c2 = 0, c3 = 0, cx = 0;
+        studyRemaining.forEach(c => {
+            const b = studyCardBucket[c.id];
+            if (b === 1) c1++; else if (b === 2) c2++; else if (b === 3) c3++; else cx++;
+        });
+        if (studyBucket1El) studyBucket1El.textContent = c1;
+        if (studyBucket2El) studyBucket2El.textContent = c2;
+        if (studyBucket3El) studyBucket3El.textContent = c3;
+        if (studyCrossEl) studyCrossEl.textContent = cx;
     }
 
     function studyShuffle(a) {
@@ -661,7 +672,7 @@
 
     function studyPickNextIndex() {
         if (studyRemaining.length === 0) return 0;
-        const weights = studyRemaining.map(c => studyWrongIds.has(c.id) ? STUDY_WRONG_WEIGHT : 1);
+        const weights = studyRemaining.map(c => studyCardBucket[c.id] === 'cross' ? STUDY_WRONG_WEIGHT : 1);
         const total = weights.reduce((a, b) => a + b, 0);
         let r = Math.random() * total;
         for (let i = 0; i < studyRemaining.length; i++) {
@@ -686,11 +697,11 @@
             if (!col || !col.cards || col.cards.length === 0) return;
             studyCards = studyShuffle([...col.cards]);
             studyRemaining = [...studyCards];
-            studyWrongIds = new Set();
+            studyCardBucket = {};
+            studyRemaining.forEach(c => { studyCardBucket[c.id] = 'cross'; });
             studyWrongCountByCardId = {};
             studyIndex = 0;
             studyCorrectCount = 0;
-            studyWrongCount = 0;
             if (studyCollectionNameEl) studyCollectionNameEl.textContent = col.name || btn.textContent.trim() || 'Collection';
             studyUpdateStats();
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
@@ -716,8 +727,7 @@
         e.stopPropagation();
         const card = studyRemaining[studyIndex];
         if (card && card.id !== undefined) {
-            if (!studyWrongIds.has(card.id)) studyWrongCount++;
-            studyWrongIds.add(card.id);
+            studyCardBucket[card.id] = 'cross';
             studyWrongCountByCardId[card.id] = (studyWrongCountByCardId[card.id] || 0) + 1;
         }
         studyUpdateStats();
@@ -725,18 +735,34 @@
     });
     if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => {
         e.stopPropagation();
-        studyCorrectCount++;
         const card = studyRemaining[studyIndex];
-        if (card && card.id !== undefined) studyWrongIds.delete(card.id);
-        studyUpdateStats();
-        studyRemaining.splice(studyIndex, 1);
-        if (studyRemaining.length === 0) {
-            if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
-            if (studyDoneMessage) studyDoneMessage.style.display = 'block';
-            studyRenderDoneStats();
+        if (!card) return;
+        studyCorrectCount++;
+        const cur = studyCardBucket[card.id];
+        if (cur === 'cross') {
+            studyCardBucket[card.id] = 3;
+            studyUpdateStats();
+            studyNextCard();
+        } else if (cur === 3) {
+            studyCardBucket[card.id] = 2;
+            studyUpdateStats();
+            studyNextCard();
+        } else if (cur === 2) {
+            studyCardBucket[card.id] = 1;
+            studyUpdateStats();
+            studyNextCard();
         } else {
-            studyIndex = studyPickNextIndex();
-            studyShowCard();
+            studyRemaining.splice(studyIndex, 1);
+            delete studyCardBucket[card.id];
+            studyUpdateStats();
+            if (studyRemaining.length === 0) {
+                if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
+                if (studyDoneMessage) studyDoneMessage.style.display = 'block';
+                studyRenderDoneStats();
+            } else {
+                studyIndex = studyPickNextIndex();
+                studyShowCard();
+            }
         }
     });
 
@@ -754,11 +780,11 @@
         studyAgainBtn.addEventListener('click', () => {
             studyCards = studyShuffle([...studyCards]);
             studyRemaining = [...studyCards];
-            studyWrongIds = new Set();
+            studyCardBucket = {};
+            studyRemaining.forEach(c => { studyCardBucket[c.id] = 'cross'; });
             studyWrongCountByCardId = {};
             studyIndex = 0;
             studyCorrectCount = 0;
-            studyWrongCount = 0;
             studyUpdateStats();
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
