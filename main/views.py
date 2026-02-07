@@ -58,20 +58,21 @@ class ForgotPasswordView(View):
         if not email:
             return JsonResponse({"ok": False, "errors": {"email": ["Email is required."]}}, status=400)
         user = User.objects.filter(email__iexact=email).first()
-        if user:
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            reset_url = request.build_absolute_uri(reverse('main:password_reset_confirm', kwargs={'uidb64': uid, 'token': token}))
-            try:
-                send_mail(
-                    subject='Password reset',
-                    message=f'Use this link to set a new password:\n{reset_url}',
-                    from_email=None,
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
-            except Exception:
-                pass
+        if not user:
+            return JsonResponse({"ok": False, "errors": {"email": ["No account with this email."]}}, status=400)
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        reset_url = request.build_absolute_uri(reverse('main:password_reset_confirm', kwargs={'uidb64': uid, 'token': token}))
+        try:
+            send_mail(
+                subject='Password reset',
+                message=f'Use this link to set a new password:\n{reset_url}',
+                from_email=None,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
         return JsonResponse({"ok": True})
 
 
