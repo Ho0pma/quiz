@@ -84,6 +84,7 @@
                             <button type="button" id="studyBtnRight">✓</button>
                         </div>
                         <button type="button" id="studyBackToCollections">Back to collections</button>
+                        <button type="button" id="studyResetBtn">Reset</button>
                     </div>
                     <div id="studyDoneMessage" style="display: none; margin: 1em 0; padding: 1em; background: #e8f5e9; border-radius: 8px;">
                         <p style="margin: 0 0 0.5em 0; font-weight: bold;">Done! Study again?</p>
@@ -874,6 +875,26 @@
             studyChooseCollection.style.display = 'block';
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+        });
+    }
+    const studyResetBtn = document.getElementById('studyResetBtn');
+    if (studyResetBtn) {
+        studyResetBtn.addEventListener('click', async () => {
+            studyCards = studyShuffle([...studyCards]);
+            studyRemaining = [...studyCards];
+            studyCardBucket = {};
+            studyRemaining.forEach(c => { studyCardBucket[c.id] = 'cross'; });
+            studyWrongCountByCardId = {};
+            studyWrongCooldown = {};
+            studyCorrectCount = 0;
+            studyUpdateStats();
+            studySaveState();
+            await studySaveToServer();
+            if (studyDoneMessage) studyDoneMessage.style.display = 'none';
+            if (studyCardPlayArea) studyCardPlayArea.style.display = '';
+            if (studyDoneStatsEl) studyDoneStatsEl.innerHTML = '';
+            studyIndex = studyPickNextIndex();
+            studyShowCard();
         });
     }
     const studyAgainBtn = document.getElementById('studyAgainBtn');
