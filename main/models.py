@@ -43,3 +43,10 @@ class Card(models.Model):
 
     def __str__(self):
         return self.question[:50]
+
+
+class StudyProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='study_progress')
+    collection = models.OneToOneField(Collection, on_delete=models.CASCADE, related_name='study_progress')
+    state = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)

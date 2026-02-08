@@ -12,7 +12,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from main.forms import SignUpForm, CollectionForm, CardForm, ProfileForm
-from main.models import Collection, Card
+from main.models import Collection, Card, StudyProgress
 
 
 class HomeView(TemplateView):
@@ -195,3 +195,28 @@ class DeleteCardAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "errors": "Card not found"}, status=404)
 
 
+class StudyProgressView(LoginRequiredMixin, View):
+    def get(self, request, collection_id, *args, **kwargs):
+        try:
+            collection = Collection.objects.get(id=collection_id, user=request.user)
+        except Collection.DoesNotExist:
+            return JsonResponse({"ok": False}, status=404)
+        progress, _ = StudyProgress.objects.get_or_create(user=request.user, collection=collection, defaults={"state": {}})
+        return JsonResponse({"ok": True, "state": progress.state})
+
+    def post(self, request, collection_id, *args, **kwargs):
+        try:
+            collection = Collection.objects.get(id=collection_id, user=request.user)
+        except Collection.DoesNotExist:
+            return JsonResponse({"ok": False}, status=404)
+        try:
+            body = json.loads(request.body) if request.body else {}
+            state = body.get("state")
+            if state is not None and isinstance(state, dict):
+                progress, _ = StudyProgress.objects.update_or_create(
+                    user=request.user, collection=collection, defaults={"state": state}
+                )
+                return JsonResponse({"ok": True})
+        except (ValueError, TypeError):
+            pass
+        return JsonResponse({"ok": False}, status=400)

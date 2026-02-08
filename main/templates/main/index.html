@@ -599,6 +599,11 @@
     let studyCorrectCount = 0;
     const STUDY_WRONG_WEIGHT = 4;
     const STUDY_WRONG_COOLDOWN = 3;
+    const STUDY_STORAGE_KEY = 'quiz_study_';
+    const STUDY_SAVE_DEBOUNCE_MS = 1500;
+    const STUDY_LOAD_TIMEOUT_MS = 2000;
+    let studyCurrentCollectionId = null;
+    let studySaveDebounceTimer = null;
 
     const studyCollectionNameEl = document.getElementById('studyCollectionName');
     const studyTotalCardsEl = document.getElementById('studyTotalCards');
@@ -697,21 +702,100 @@
         studyShowCard();
     }
 
+    function studyBuildState() {
+        const doneCardIds = studyCards.filter(c => !studyRemaining.some(r => r.id === c.id)).map(c => c.id);
+        const bucket = {};
+        studyRemaining.forEach(c => { bucket[c.id] = studyCardBucket[c.id]; });
+        return { doneCardIds, bucket, wrongCountByCardId: { ...studyWrongCountByCardId } };
+    }
+
+    function studySaveState() {
+        if (studyCurrentCollectionId == null || !studyCards.length) return;
+        try {
+            localStorage.setItem(STUDY_STORAGE_KEY + studyCurrentCollectionId, JSON.stringify(studyBuildState()));
+        } catch (e) {}
+    }
+
+    function studyApplyState(saved, allCards) {
+        const doneSet = new Set(saved.doneCardIds || []);
+        studyRemaining = allCards.filter(c => !doneSet.has(c.id));
+        studyCardBucket = {};
+        studyRemaining.forEach(c => {
+            studyCardBucket[c.id] = (saved.bucket && saved.bucket[c.id] !== undefined) ? saved.bucket[c.id] : 'cross';
+        });
+        studyWrongCountByCardId = saved.wrongCountByCardId && typeof saved.wrongCountByCardId === 'object' ? saved.wrongCountByCardId : {};
+        studyWrongCooldown = {};
+        studyCorrectCount = allCards.length - studyRemaining.length;
+        return studyRemaining.length > 0;
+    }
+
+    function studyLoadState(collectionId, allCards) {
+        try {
+            const raw = localStorage.getItem(STUDY_STORAGE_KEY + collectionId);
+            if (!raw) return false;
+            return studyApplyState(JSON.parse(raw), allCards);
+        } catch (e) { return false; }
+    }
+
+    async function studyLoadFromServer(collectionId) {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), STUDY_LOAD_TIMEOUT_MS);
+        try {
+            const r = await fetch(`/collections/${collectionId}/study-progress/`, { method: 'GET', signal: controller.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            clearTimeout(timeout);
+            if (!r.ok) return null;
+            const data = await r.json();
+            return data.state != null ? data.state : null;
+        } catch (e) { clearTimeout(timeout); return null; }
+    }
+
+    function studySaveToServer() {
+        if (studyCurrentCollectionId == null || !studyCards.length) return Promise.resolve();
+        const state = studyBuildState();
+        studySaveState();
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+        return fetch(`/collections/${studyCurrentCollectionId}/study-progress/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrf ? csrf.value : '' },
+            body: JSON.stringify({ state })
+        }).then(() => {}).catch(() => {});
+    }
+
+    function studyScheduleSave() {
+        clearTimeout(studySaveDebounceTimer);
+        studySaveDebounceTimer = setTimeout(() => { studySaveToServer(); studySaveDebounceTimer = null; }, STUDY_SAVE_DEBOUNCE_MS);
+    }
+
     document.querySelectorAll('.study-pick-collection').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const el = document.getElementById('studyDataJson');
             const studyData = el ? JSON.parse(el.textContent || '{}') : {};
             const cid = btn.getAttribute('data-collection-id');
             const col = studyData[cid];
             if (!col || !col.cards || col.cards.length === 0) return;
+            studyCurrentCollectionId = cid;
             studyCards = studyShuffle([...col.cards]);
             studyRemaining = [...studyCards];
             studyCardBucket = {};
-            studyRemaining.forEach(c => { studyCardBucket[c.id] = 'cross'; });
             studyWrongCountByCardId = {};
             studyWrongCooldown = {};
             studyIndex = 0;
             studyCorrectCount = 0;
+            let applied = false;
+            const serverState = await studyLoadFromServer(cid);
+            if (serverState && typeof serverState === 'object') {
+                applied = studyApplyState(serverState, studyCards);
+            }
+            if (!applied) {
+                const fromLocal = studyLoadState(cid, studyCards);
+                applied = fromLocal && studyRemaining.length > 0;
+            }
+            if (!applied || studyRemaining.length === 0) {
+                studyRemaining = [...studyCards];
+                studyRemaining.forEach(c => { studyCardBucket[c.id] = 'cross'; });
+                studyCorrectCount = 0;
+            }
             if (studyCollectionNameEl) studyCollectionNameEl.textContent = col.name || btn.textContent.trim() || 'Collection';
             studyUpdateStats();
             if (studyCardPlayArea) studyCardPlayArea.style.display = '';
@@ -742,6 +826,7 @@
             studyWrongCooldown[card.id] = STUDY_WRONG_COOLDOWN;
         }
         studyUpdateStats();
+        studyScheduleSave();
         studyNextCard();
     });
     if (studyBtnRight) studyBtnRight.addEventListener('click', (e) => {
@@ -753,19 +838,23 @@
         if (cur === 'cross') {
             studyCardBucket[card.id] = 3;
             studyUpdateStats();
+            studyScheduleSave();
             studyNextCard();
         } else if (cur === 3) {
             studyCardBucket[card.id] = 2;
             studyUpdateStats();
+            studyScheduleSave();
             studyNextCard();
         } else if (cur === 2) {
             studyCardBucket[card.id] = 1;
             studyUpdateStats();
+            studyScheduleSave();
             studyNextCard();
         } else {
             studyRemaining.splice(studyIndex, 1);
             delete studyCardBucket[card.id];
             studyUpdateStats();
+            studyScheduleSave();
             if (studyRemaining.length === 0) {
                 if (studyCardPlayArea) studyCardPlayArea.style.display = 'none';
                 if (studyDoneMessage) studyDoneMessage.style.display = 'block';
@@ -778,7 +867,9 @@
     });
 
     if (studyBackToCollections) {
-        studyBackToCollections.addEventListener('click', () => {
+        studyBackToCollections.addEventListener('click', async () => {
+            studySaveState();
+            await studySaveToServer();
             studyCardArea.style.display = 'none';
             studyChooseCollection.style.display = 'block';
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
@@ -806,7 +897,9 @@
         });
     }
     if (studyDoneBackBtn) {
-        studyDoneBackBtn.addEventListener('click', () => {
+        studyDoneBackBtn.addEventListener('click', async () => {
+            studySaveState();
+            await studySaveToServer();
             studyCardArea.style.display = 'none';
             studyChooseCollection.style.display = 'block';
             if (studyDoneMessage) studyDoneMessage.style.display = 'none';
