@@ -162,12 +162,17 @@
             <source src="{% static 'main/audio/background.mp3' %}" type="audio/mpeg">
             <source src="{% static 'main/audio/background.ogg' %}" type="audio/ogg">
         </audio>
-        <div id="loginLottie" style="position:absolute; left:0; top:0; width:100%; height:100%;"></div>
-        <button type="button" id="openLogin"
-                style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-                       z-index:1; padding:0.75em 1.5em; font-size:1rem;">
-            Sign in
-        </button>
+        <div id="loginPhase1" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:2; cursor:pointer; background:#000;">
+            <div id="loginStartBtn" style="width:280px; height:140px;"></div>
+        </div>
+        <div id="loginPhase2" style="position:absolute; inset:0; display:none;">
+            <div id="loginLottie" style="position:absolute; left:0; top:0; width:100%; height:100%;"></div>
+            <button type="button" id="openLogin"
+                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+                           z-index:1; padding:0.75em 1.5em; font-size:1rem;">
+                Sign in
+            </button>
+        </div>
     </div>
 {% endif %}
 
@@ -1331,29 +1336,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const loginLottieContainer = document.getElementById('loginLottie');
-        if (loginLottieContainer) {
+        var loginScreen = document.getElementById('loginScreen');
+        if (!loginScreen) return;
+        var phase1 = document.getElementById('loginPhase1');
+        var phase2 = document.getElementById('loginPhase2');
+        var startBtnContainer = document.getElementById('loginStartBtn');
+        var loginLottieContainer = document.getElementById('loginLottie');
+        var bgMusic = document.getElementById('loginBgMusic');
+        var mainAnimLoaded = false;
+        function showMainScreen() {
+            if (phase1) phase1.style.display = 'none';
+            if (phase2) phase2.style.display = 'block';
+            if (bgMusic) {
+                bgMusic.volume = 0.5;
+                bgMusic.play().catch(function () {});
+            }
+            if (loginLottieContainer && !mainAnimLoaded) {
+                mainAnimLoaded = true;
+                lottie.loadAnimation({
+                    container: loginLottieContainer,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: "{% static 'main/animation/login_main_loop.json' %}",
+                    rendererSettings: { preserveAspectRatio: 'xMidYMid slice' }
+                });
+            }
+        }
+        if (startBtnContainer) {
             lottie.loadAnimation({
-                container: loginLottieContainer,
+                container: startBtnContainer,
                 renderer: 'svg',
                 loop: true,
                 autoplay: true,
-                path: "{% static 'main/animation/login_main_loop.json' %}",
-                rendererSettings: {
-                    preserveAspectRatio: 'xMidYMid slice'
-                }
+                path: "{% static 'main/animation/start_btn.json' %}"
             });
         }
-        var bgMusic = document.getElementById('loginBgMusic');
-        var loginScreen = document.getElementById('loginScreen');
-        if (bgMusic && loginScreen) {
-            bgMusic.volume = 0.5;
-            function startMusic() {
-                bgMusic.play().catch(function () {});
-                loginScreen.removeEventListener('click', startMusic);
-            }
-            startMusic();
-            loginScreen.addEventListener('click', startMusic);
+        if (phase1) {
+            phase1.addEventListener('click', function () {
+                showMainScreen();
+            });
         }
     });
 </script>
