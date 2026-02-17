@@ -4,6 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overscroll-behavior: none;
+            background: #000;
+        }
+    </style>
 </head>
 <body>
 {% csrf_token %}
@@ -148,9 +157,13 @@
         </div>
     </div>
 {% else %}
-    <div style="text-align: center; margin-top: 40px;">
-        <div id="loginLottie" style="width:320px; height:320px; margin: 0 auto 20px auto;"></div>
-        <button type="button" id="openLogin">Sign in</button>
+    <div id="loginScreen" style="position:relative; width:100vw; height:110vh; top:-5vh; overflow:hidden;">
+        <div id="loginLottie" style="position:absolute; inset:0;"></div>
+        <button type="button" id="openLogin"
+                style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+                       z-index:1; padding:0.75em 1.5em; font-size:1rem;">
+            Sign in
+        </button>
     </div>
 {% endif %}
 
@@ -1321,7 +1334,10 @@
                 renderer: 'svg',
                 loop: true,
                 autoplay: true,
-                path: "{% static 'main/animation/login_main_loop.json' %}"
+                path: "{% static 'main/animation/login_main_loop.json' %}",
+                rendererSettings: {
+                    preserveAspectRatio: 'xMidYMid slice'
+                }
             });
         }
     });
