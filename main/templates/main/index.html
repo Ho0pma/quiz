@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -147,7 +148,10 @@
         </div>
     </div>
 {% else %}
-    <button type="button" id="openLogin">Sign in</button>
+    <div style="text-align: center; margin-top: 40px;">
+        <div id="loginLottie" style="width:320px; height:320px; margin: 0 auto 20px auto;"></div>
+        <button type="button" id="openLogin">Sign in</button>
+    </div>
 {% endif %}
 
 <!-- Модальное окно регистрации -->
@@ -1307,4 +1311,19 @@
 
 
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loginLottieContainer = document.getElementById('loginLottie');
+        if (loginLottieContainer) {
+            lottie.loadAnimation({
+                container: loginLottieContainer,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: "{% static 'main/animation/login_main_loop.json' %}"
+            });
+        }
+    });
+</script>
 </html>
