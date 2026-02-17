@@ -157,8 +157,12 @@
         </div>
     </div>
 {% else %}
-    <div id="loginScreen" style="position:relative; width:100vw; height:110vh; top:-5vh; overflow:hidden;">
-        <div id="loginLottie" style="position:absolute; inset:0;"></div>
+    <div id="loginScreen" style="position:relative; width:100vw; height:100vh; overflow:hidden;">
+        <audio id="loginBgMusic" loop preload="auto" style="display:none;">
+            <source src="{% static 'main/audio/background.mp3' %}" type="audio/mpeg">
+            <source src="{% static 'main/audio/background.ogg' %}" type="audio/ogg">
+        </audio>
+        <div id="loginLottie" style="position:absolute; left:0; top:0; width:100%; height:100%;"></div>
         <button type="button" id="openLogin"
                 style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
                        z-index:1; padding:0.75em 1.5em; font-size:1rem;">
@@ -1339,6 +1343,17 @@
                     preserveAspectRatio: 'xMidYMid slice'
                 }
             });
+        }
+        var bgMusic = document.getElementById('loginBgMusic');
+        var loginScreen = document.getElementById('loginScreen');
+        if (bgMusic && loginScreen) {
+            bgMusic.volume = 0.5;
+            function startMusic() {
+                bgMusic.play().catch(function () {});
+                loginScreen.removeEventListener('click', startMusic);
+            }
+            startMusic();
+            loginScreen.addEventListener('click', startMusic);
         }
     });
 </script>
