@@ -182,7 +182,8 @@
 {% endif %}
 
 <!-- Модальное окно регистрации -->
-<div id="signupModal" style="display:none;">
+<div id="signupModal"
+     style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); overflow:auto;">
     <div>
         <button type="button" id="closeSignup">X</button>
 
@@ -202,21 +203,38 @@
 </div>
 
 <!-- Модальное окно входа -->
-<div id="loginModal" style="display:none;">
-    <div>
-        <button type="button" id="closeLogin">X</button>
-
-        <div id="loginErrors" style="color:red;"></div>
-
-        <form id="loginForm" method="post" action="{% url 'main:login_ajax' %}">
-            {% csrf_token %}
-            <input name="username" type="text" placeholder="nickname or email" required>
-            <input name="password" type="password" placeholder="password" required>
-            <button type="submit">Log in</button>
-            <button type="button" id="switchToSignup">Create account</button>
-            <button type="button" id="closeLoginBtn">Close</button>
-        </form>
-        <button type="button" id="forgotPasswordBtn">Forgot your password?</button>
+<div id="loginModal"
+     style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); overflow:auto;">
+    <div class="auth-ring">
+        <i style="--clr:#00ff0a;"></i>
+        <i style="--clr:#ff0057;"></i>
+        <i style="--clr:#fffd44;"></i>
+        <div class="auth-login">
+            <button type="button" id="closeLogin"
+                    style="align-self:flex-end; background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">
+                ×
+            </button>
+            <h2>Login</h2>
+            <div id="loginErrors" style="color:#ff8a8a;"></div>
+            <form id="loginForm" method="post" action="{% url 'main:login_ajax' %}"
+                  style="width:100%; display:flex; flex-direction:column; gap:16px;">
+                {% csrf_token %}
+                <div class="inputBx">
+                    <input name="username" type="text" placeholder="nickname or email" required>
+                </div>
+                <div class="inputBx">
+                    <input name="password" type="password" placeholder="password" required>
+                </div>
+                <div class="inputBx">
+                    <input type="submit" value="Log in">
+                </div>
+                <div class="links">
+                    <a id="forgotPasswordBtn">Forgot password</a>
+                    <a id="switchToSignup">Sign up</a>
+                </div>
+                <button type="button" id="closeLoginBtn" style="display:none;"></button>
+            </form>
+        </div>
         <div id="forgotPasswordWrap" style="display:none;">
             <p>Enter your email to receive a reset link.</p>
             <form id="forgotPasswordForm" method="post" action="{% url 'main:forgot_password' %}">
@@ -1338,6 +1356,144 @@
 
 
 </body>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap");
+
+    .auth-ring {
+        position: relative;
+        width: 500px;
+        max-width: 90vw;
+        height: 500px;
+        max-height: 90vh;
+        margin: 40px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .auth-ring i {
+        position: absolute;
+        inset: 0;
+        border: 2px solid #fff;
+        transition: 0.5s;
+    }
+
+    .auth-ring i:nth-child(1) {
+        border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
+        animation: auth-animate 6s linear infinite;
+    }
+
+    .auth-ring i:nth-child(2) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate 4s linear infinite;
+    }
+
+    .auth-ring i:nth-child(3) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate2 10s linear infinite;
+    }
+
+    .auth-ring:hover i {
+        border: 6px solid var(--clr);
+        filter: drop-shadow(0 0 20px var(--clr));
+    }
+
+    @keyframes auth-animate {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes auth-animate2 {
+        0% {
+            transform: rotate(360deg);
+        }
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
+    .auth-login {
+        position: absolute;
+        width: 300px;
+        max-width: 80vw;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 20px;
+        opacity: 0;
+        transform: scale(0.9);
+        animation: auth-login-in 0.80s ease-out forwards;
+    }
+
+    .auth-login h2 {
+        font-size: 2em;
+        color: #fff;
+    }
+
+    .auth-login .inputBx {
+        position: relative;
+        width: 100%;
+    }
+
+    .auth-login .inputBx input {
+        position: relative;
+        width: 100%;
+        padding: 12px 20px;
+        background: transparent;
+        border: 2px solid #fff;
+        border-radius: 40px;
+        font-size: 1.1em;
+        color: #fff;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .auth-login .inputBx input[type="submit"] {
+        width: 100%;
+        background: transparent;
+        border: 2px solid #fff;
+        cursor: pointer;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .auth-login .inputBx input::placeholder {
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .auth-login .links {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+        font-size: 0.9em;
+    }
+
+    .auth-login .links a {
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    @keyframes auth-login-in {
+        0% {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
