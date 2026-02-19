@@ -167,11 +167,12 @@
         </div>
         <div id="loginPhase2" style="position:absolute; inset:0; display:none;">
             <div id="loginLottie" style="position:absolute; left:0; top:0; width:100%; height:100%;"></div>
-            <button type="button" id="openLogin"
-                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-                           z-index:1; padding:0.75em 1.5em; font-size:1rem;">
-                Sign in
-            </button>
+            <div class="signin-ring" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1;">
+                <i style="--clr:#00ff0a;"></i>
+                <i style="--clr:#ff0057;"></i>
+                <i style="--clr:#fffd44;"></i>
+                <button type="button" id="openLogin" class="signin-btn">Sign in</button>
+            </div>
             <button type="button" id="musicMuteBtn"
                     style="position:absolute; top:16px; right:16px; z-index:3; width:120px; height:120px;
                            padding:0; border:none; background:transparent; cursor:pointer;">
@@ -220,13 +221,13 @@
                   style="width:100%; display:flex; flex-direction:column; gap:16px;">
                 {% csrf_token %}
                 <div class="inputBx">
-                    <input name="username" type="text" placeholder="nickname or email" required>
+                    <input class="auth-field" name="username" type="text" placeholder="nickname or email" required>
                 </div>
                 <div class="inputBx">
-                    <input name="password" type="password" placeholder="password" required>
+                    <input class="auth-field" name="password" type="password" placeholder="password" required>
                 </div>
                 <div class="inputBx">
-                    <input type="submit" value="Log in">
+                    <input class="auth-field" type="submit" value="Log in">
                 </div>
                 <div class="links">
                     <a id="forgotPasswordBtn">Forgot password</a>
@@ -336,6 +337,8 @@
             loginModal.style.display = 'none';
             const openLoginBtn = document.getElementById('openLogin');
             if (openLoginBtn) openLoginBtn.disabled = false;
+            const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
+            if (signinRing) signinRing.classList.remove('fade-out');
         };
     }
     
@@ -396,6 +399,8 @@
     if (openLoginBtn) {
         openLoginBtn.onclick = () => {
             openLoginBtn.disabled = true;
+            const signinRing = openLoginBtn.closest('.signin-ring');
+            if (signinRing) signinRing.classList.add('fade-out');
             modal.style.display = 'none';
             errorsBox.innerHTML = '';
             loginErrorsBox.innerHTML = '';
@@ -413,6 +418,8 @@
             if (forgotWrap) forgotWrap.style.display = 'none';
             const openLoginBtn = document.getElementById('openLogin');
             if (openLoginBtn) openLoginBtn.disabled = false;
+            const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
+            if (signinRing) signinRing.classList.remove('fade-out');
         };
     }
     // Forgot password
@@ -478,6 +485,8 @@
             if (fw) fw.style.display = 'none';
             const openLoginBtn = document.getElementById('openLogin');
             if (openLoginBtn) openLoginBtn.disabled = false;
+            const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
+            if (signinRing) signinRing.classList.remove('fade-out');
         };
     }
     
@@ -1360,12 +1369,15 @@
     @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap");
 
     .auth-ring {
-        position: relative;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         width: 500px;
         max-width: 90vw;
         height: 500px;
         max-height: 90vh;
-        margin: 40px auto;
+        margin: 0;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -1416,6 +1428,61 @@
         }
     }
 
+    .signin-ring {
+        position: relative;
+        width: 170px;
+        height: 170px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .signin-ring.fade-out {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .signin-ring i {
+        position: absolute;
+        inset: 0;
+        border: 2px solid #fff;
+        transition: 0.5s;
+    }
+
+    .signin-ring i:nth-child(1) {
+        border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
+        animation: auth-animate 6s linear infinite;
+    }
+
+    .signin-ring i:nth-child(2) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate 4s linear infinite;
+    }
+
+    .signin-ring i:nth-child(3) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate2 10s linear infinite;
+    }
+
+    .signin-ring:hover i {
+        border: 6px solid var(--clr);
+        filter: drop-shadow(0 0 20px var(--clr));
+    }
+
+    .signin-btn {
+        position: relative;
+        z-index: 1;
+        padding: 12px 28px;
+        background: transparent;
+        border: none;
+        border-radius: 40px;
+        font-size: 1.1em;
+        font-family: "Quicksand", sans-serif;
+        color: #fff;
+        cursor: pointer;
+        outline: none;
+    }
+
     .auth-login {
         position: absolute;
         width: 300px;
@@ -1441,29 +1508,29 @@
         width: 100%;
     }
 
-    .auth-login .inputBx input {
+    .auth-login .inputBx .auth-field {
         position: relative;
         width: 100%;
+        box-sizing: border-box;
         padding: 12px 20px;
         background: transparent;
         border: 2px solid #fff;
         border-radius: 40px;
         font-size: 1.1em;
+        font-family: "Quicksand", sans-serif;
         color: #fff;
         box-shadow: none;
         outline: none;
+        -webkit-appearance: none;
+        appearance: none;
     }
 
-    .auth-login .inputBx input[type="submit"] {
-        width: 100%;
-        background: transparent;
-        border: 2px solid #fff;
+    .auth-login .inputBx .auth-field[type="submit"] {
         cursor: pointer;
-        color: #fff;
         font-weight: 600;
     }
 
-    .auth-login .inputBx input::placeholder {
+    .auth-login .inputBx .auth-field::placeholder {
         color: rgba(255, 255, 255, 0.75);
     }
 
