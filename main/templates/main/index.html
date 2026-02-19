@@ -171,7 +171,7 @@
                 <i style="--clr:#00ff0a;"></i>
                 <i style="--clr:#ff0057;"></i>
                 <i style="--clr:#fffd44;"></i>
-                <button type="button" id="openLogin" class="signin-btn">Sign in</button>
+                <button type="button" id="openLogin" class="signin-btn">sign in</button>
             </div>
             <button type="button" id="musicMuteBtn"
                     style="position:absolute; top:16px; right:16px; z-index:3; width:120px; height:120px;
@@ -215,7 +215,7 @@
                     style="align-self:flex-end; background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">
                 ×
             </button>
-            <h2>Login</h2>
+            <h2>login</h2>
             <div id="loginErrors" style="color:#ff8a8a;"></div>
             <form id="loginForm" method="post" action="{% url 'main:login_ajax' %}"
                   style="width:100%; display:flex; flex-direction:column; gap:16px;">
@@ -227,11 +227,11 @@
                     <input class="auth-field" name="password" type="password" placeholder="password" required>
                 </div>
                 <div class="inputBx">
-                    <input class="auth-field" type="submit" value="Log in">
+                    <input class="auth-field" type="submit" value="log in">
                 </div>
                 <div class="links">
-                    <a id="forgotPasswordBtn">Forgot password</a>
-                    <a id="switchToSignup">Sign up</a>
+                    <a id="forgotPasswordBtn">forgot password</a>
+                    <a id="switchToSignup">sign up</a>
                 </div>
                 <button type="button" id="closeLoginBtn" style="display:none;"></button>
             </form>
@@ -1368,6 +1368,14 @@
 <style>
     @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap");
 
+    @font-face {
+        font-family: 'Folies Bergere';
+        src: url("{% static 'main/fonts/Folies_Bergere_Regular.ttf' %}") format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+
     .auth-ring {
         position: absolute;
         top: 50%;
@@ -1406,8 +1414,8 @@
     }
 
     .auth-ring:hover i {
-        border: 6px solid var(--clr);
-        filter: drop-shadow(0 0 20px var(--clr));
+        border: 6px solid #660000;
+        filter: drop-shadow(0 0 20px #660000);
     }
 
     @keyframes auth-animate {
@@ -1465,8 +1473,8 @@
     }
 
     .signin-ring:hover i {
-        border: 6px solid var(--clr);
-        filter: drop-shadow(0 0 20px var(--clr));
+        border: 6px solid #660000;
+        filter: drop-shadow(0 0 20px #660000);
     }
 
     .signin-btn {
@@ -1477,7 +1485,7 @@
         border: none;
         border-radius: 40px;
         font-size: 1.1em;
-        font-family: "Quicksand", sans-serif;
+        font-family: 'Folies Bergere', 'Quicksand', sans-serif;
         color: #fff;
         cursor: pointer;
         outline: none;
@@ -1499,6 +1507,12 @@
         animation: auth-login-in 0.80s ease-out forwards;
     }
 
+    .auth-login h2,
+    .auth-login .inputBx .auth-field,
+    .auth-login .links a {
+        font-family: 'Folies Bergere', 'Quicksand', sans-serif;
+    }
+
     .auth-login h2 {
         font-size: 2em;
         color: #fff;
@@ -1518,7 +1532,7 @@
         border: 2px solid #fff;
         border-radius: 40px;
         font-size: 1.1em;
-        font-family: "Quicksand", sans-serif;
+        font-family: 'Folies Bergere', 'Quicksand', sans-serif;
         color: #fff;
         box-shadow: none;
         outline: none;
@@ -1541,12 +1555,13 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 4px;
+        padding: 0 8px 0 8px;
         font-size: 0.9em;
+        box-sizing: border-box;
     }
 
     .auth-login .links a {
-        color: #fff;
+        color: rgba(255, 255, 255, 0.6);
         text-decoration: none;
         cursor: pointer;
     }
