@@ -186,6 +186,7 @@
                 <i style="--clr:#00ff0a;"></i>
                 <i style="--clr:#ff0057;"></i>
                 <i style="--clr:#fffd44;"></i>
+                <img src="{% static 'main/white_person.png' %}" alt="" class="ghost-ring-figure" />
             </div>
         </div>
     </div>
@@ -1579,6 +1580,24 @@
     .ghost-ring:hover i {
         border: 4px solid #660000;
         filter: drop-shadow(0 0 12px #660000);
+    }
+
+    .ghost-ring-figure {
+        position: absolute;
+        left: 55%;
+        top: 47%;
+        transform: translate(-50%, -50%);
+        width: 250px;
+        height: auto;
+        object-fit: contain;
+        z-index: 1;
+        opacity: 0.85;
+        transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    .ghost-ring:hover .ghost-ring-figure {
+        opacity: 1;
+        filter: saturate(1.1);
     }
 
     .signin-btn {
