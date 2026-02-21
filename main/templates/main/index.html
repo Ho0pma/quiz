@@ -177,7 +177,7 @@
                 <i style="--clr:#00ff0a;"></i>
                 <i style="--clr:#ff0057;"></i>
                 <i style="--clr:#fffd44;"></i>
-                <div id="ghostLottie" style="width:230px; height:230px; opacity:0.65;"></div>
+                <div id="ghostLottie" style="width:230px; height:230px;"></div>
             </div>
             <button type="button" id="musicMuteBtn"
                     style="position:absolute; top:16px; right:16px; z-index:3; width:120px; height:120px;
@@ -1533,6 +1533,13 @@
         left: 52%;
         top: 42%;
         transform: translate(-50%, -50%);
+        opacity: 0.65;
+        transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    .ghost-ring:hover #ghostLottie {
+        opacity: 1;
+        filter: saturate(1.25);
     }
 
     .signin-btn {
