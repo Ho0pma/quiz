@@ -173,6 +173,7 @@
                 <i style="--clr:#fffd44;"></i>
                 <button type="button" id="openLogin" class="signin-btn">sign in</button>
             </div>
+            <div id="ghostLottie" style="position:absolute; top:50%; left:58%; transform:translate(-50%, -50%); z-index:1; width:300px; height:300px; opacity:0.65;"></div>
             <button type="button" id="musicMuteBtn"
                     style="position:absolute; top:16px; right:16px; z-index:3; width:120px; height:120px;
                            padding:0; border:none; background:transparent; cursor:pointer;">
@@ -339,6 +340,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var ghostEl = document.getElementById('ghostLottie');
+            if (ghostEl) ghostEl.classList.remove('fade-out');
         };
     }
     
@@ -401,6 +404,8 @@
             openLoginBtn.disabled = true;
             const signinRing = openLoginBtn.closest('.signin-ring');
             if (signinRing) signinRing.classList.add('fade-out');
+            var ghostEl = document.getElementById('ghostLottie');
+            if (ghostEl) ghostEl.classList.add('fade-out');
             modal.style.display = 'none';
             errorsBox.innerHTML = '';
             loginErrorsBox.innerHTML = '';
@@ -420,6 +425,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var ghostEl = document.getElementById('ghostLottie');
+            if (ghostEl) ghostEl.classList.remove('fade-out');
         };
     }
     // Forgot password
@@ -487,6 +494,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var ghostEl = document.getElementById('ghostLottie');
+            if (ghostEl) ghostEl.classList.remove('fade-out');
         };
     }
     
@@ -1445,7 +1454,8 @@
         align-items: center;
     }
 
-    .signin-ring.fade-out {
+    .signin-ring.fade-out,
+    #ghostLottie.fade-out {
         opacity: 0;
         pointer-events: none;
     }
@@ -1589,8 +1599,10 @@
         var bgMusic = document.getElementById('loginBgMusic');
         var muteBtn = document.getElementById('musicMuteBtn');
         var muteLottieContainer = document.getElementById('musicMuteLottie');
+        var ghostLottieContainer = document.getElementById('ghostLottie');
         var mainAnimLoaded = false;
         var muteAnimLoaded = false;
+        var ghostAnimLoaded = false;
         var muteAnim = null;
         var SOUND_ON_START = 30;
         var SOUND_ON_END = 60;
@@ -1643,6 +1655,16 @@
             } else if (muteAnimLoaded && muteAnim && bgMusic && !bgMusic.muted) {
                 // coming back to phase2, ensure sound-on loop
                 startSoundOnLoop();
+            }
+            if (ghostLottieContainer && !ghostAnimLoaded) {
+                ghostAnimLoaded = true;
+                lottie.loadAnimation({
+                    container: ghostLottieContainer,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: "{% static 'main/animation/ghost.json' %}"
+                });
             }
         }
         if (startBtnContainer) {
