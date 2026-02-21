@@ -173,17 +173,21 @@
                 <i style="--clr:#fffd44;"></i>
                 <button type="button" id="openLogin" class="signin-btn">sign in</button>
             </div>
-            <div class="ghost-ring" style="position:absolute; top:60%; left:58.5%; transform:translate(-50%, -50%); z-index:1;">
+            <div class="mute-ring" style="position:absolute; top:53%; left:43.5%; transform:translate(-50%, -50%); z-index:1;">
                 <i style="--clr:#00ff0a;"></i>
                 <i style="--clr:#ff0057;"></i>
                 <i style="--clr:#fffd44;"></i>
-                <div id="ghostLottie" style="width:230px; height:230px;"></div>
+                <button type="button" id="musicMuteBtn" class="mute-ring-btn"
+                        style="position:relative; z-index:1; width:120px; height:120px; padding:0; border:none; background:transparent; cursor:pointer;">
+                    <div id="musicMuteLottie" style="width:120px; height:120px;"></div>
+                </button>
             </div>
-            <button type="button" id="musicMuteBtn"
-                    style="position:absolute; top:16px; right:16px; z-index:3; width:120px; height:120px;
-                           padding:0; border:none; background:transparent; cursor:pointer;">
-                <div id="musicMuteLottie" style="width:120px; height:120px;"></div>
-            </button>
+            <div class="ghost-ring" style="position:absolute; top:60%; left:57%; transform:translate(-50%, -50%); z-index:1;">
+                <i style="--clr:#00ff0a;"></i>
+                <i style="--clr:#ff0057;"></i>
+                <i style="--clr:#fffd44;"></i>
+                <div id="ghostLottie" style="width:190px; height:190px;"></div>
+            </div>
         </div>
     </div>
 {% endif %}
@@ -345,6 +349,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var muteRing = document.querySelector('.mute-ring');
+            if (muteRing) muteRing.classList.remove('fade-out');
             var ghostRing = document.querySelector('.ghost-ring');
             if (ghostRing) ghostRing.classList.remove('fade-out');
         };
@@ -409,6 +415,8 @@
             openLoginBtn.disabled = true;
             const signinRing = openLoginBtn.closest('.signin-ring');
             if (signinRing) signinRing.classList.add('fade-out');
+            var muteRing = document.querySelector('.mute-ring');
+            if (muteRing) muteRing.classList.add('fade-out');
             var ghostRing = document.querySelector('.ghost-ring');
             if (ghostRing) ghostRing.classList.add('fade-out');
             modal.style.display = 'none';
@@ -430,6 +438,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var muteRing = document.querySelector('.mute-ring');
+            if (muteRing) muteRing.classList.remove('fade-out');
             var ghostRing = document.querySelector('.ghost-ring');
             if (ghostRing) ghostRing.classList.remove('fade-out');
         };
@@ -499,6 +509,8 @@
             if (openLoginBtn) openLoginBtn.disabled = false;
             const signinRing = openLoginBtn ? openLoginBtn.closest('.signin-ring') : null;
             if (signinRing) signinRing.classList.remove('fade-out');
+            var muteRing = document.querySelector('.mute-ring');
+            if (muteRing) muteRing.classList.remove('fade-out');
             var ghostRing = document.querySelector('.ghost-ring');
             if (ghostRing) ghostRing.classList.remove('fade-out');
         };
@@ -1460,6 +1472,7 @@
     }
 
     .signin-ring.fade-out,
+    .mute-ring.fade-out,
     .ghost-ring.fade-out {
         opacity: 0;
         pointer-events: none;
@@ -1492,10 +1505,51 @@
         filter: drop-shadow(0 0 20px #660000);
     }
 
+    .mute-ring {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mute-ring i {
+        position: absolute;
+        inset: 0;
+        border: 2px solid #fff;
+        transition: 0.5s;
+    }
+
+    .mute-ring i:nth-child(1) {
+        border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
+        animation: auth-animate 6s linear infinite;
+    }
+
+    .mute-ring i:nth-child(2) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate 4s linear infinite;
+    }
+
+    .mute-ring i:nth-child(3) {
+        border-radius: 41% 44% 56% 59% / 38% 62% 63% 37%;
+        animation: auth-animate2 10s linear infinite;
+    }
+
+    .mute-ring:hover i {
+        border: 3px solid #660000;
+        filter: drop-shadow(0 0 12px #660000);
+    }
+
+    #musicMuteLottie {
+        filter: brightness(0) invert(1);
+        opacity: 0.72;
+    }
+
     .ghost-ring {
         position: relative;
-        width: 150px;
-        height: 150px;
+        width: 100px;
+        height: 100px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -1531,7 +1585,7 @@
     .ghost-ring #ghostLottie {
         position: absolute;
         left: 52%;
-        top: 42%;
+        top: 38%;
         transform: translate(-50%, -50%);
         opacity: 0.65;
         transition: opacity 0.3s ease, filter 0.3s ease;
