@@ -186,7 +186,6 @@
                 <i style="--clr:#00ff0a;"></i>
                 <i style="--clr:#ff0057;"></i>
                 <i style="--clr:#fffd44;"></i>
-                <div id="ghostLottie" style="width:190px; height:190px;"></div>
             </div>
         </div>
     </div>
@@ -1582,20 +1581,6 @@
         filter: drop-shadow(0 0 12px #660000);
     }
 
-    .ghost-ring #ghostLottie {
-        position: absolute;
-        left: 52%;
-        top: 38%;
-        transform: translate(-50%, -50%);
-        opacity: 0.65;
-        transition: opacity 0.3s ease, filter 0.3s ease;
-    }
-
-    .ghost-ring:hover #ghostLottie {
-        opacity: 1;
-        filter: saturate(1.25);
-    }
-
     .signin-btn {
         position: relative;
         z-index: 1;
@@ -1708,10 +1693,8 @@
         var bgMusic = document.getElementById('loginBgMusic');
         var muteBtn = document.getElementById('musicMuteBtn');
         var muteLottieContainer = document.getElementById('musicMuteLottie');
-        var ghostLottieContainer = document.getElementById('ghostLottie');
         var mainAnimLoaded = false;
         var muteAnimLoaded = false;
-        var ghostAnimLoaded = false;
         var muteAnim = null;
         var SOUND_ON_START = 30;
         var SOUND_ON_END = 60;
@@ -1764,16 +1747,6 @@
             } else if (muteAnimLoaded && muteAnim && bgMusic && !bgMusic.muted) {
                 // coming back to phase2, ensure sound-on loop
                 startSoundOnLoop();
-            }
-            if (ghostLottieContainer && !ghostAnimLoaded) {
-                ghostAnimLoaded = true;
-                lottie.loadAnimation({
-                    container: ghostLottieContainer,
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: "{% static 'main/animation/ghost.json' %}"
-                });
             }
         }
         if (startBtnContainer) {
